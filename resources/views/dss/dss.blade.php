@@ -168,20 +168,12 @@
                     </select>
                 </div>
 
-                <h4>Dispositivo</h4>
-                <div class="form-group">
-                    <label class="form-label">Selecciona dispositivo</label>
-                    <select class="form-select" id="device">
-                        <option selected>Seleccione un dispositivo</option>
-                    </select>
-                </div>
+<h4>Dispositivo</h4>
+<div class="form-group">
+    <label class="form-label">Ingresa el Número de Serie</label>
+    <input type="text" class="form-control" id="serialInput" placeholder="Ej: SN123456789">
+</div>
 
-                <div class="form-group">
-                <label class="form-label">Selecciona N/S</label>
-                <select class="form-select" id="serial_number">
-                    <option selected>Muestra Números de serie SNOW del ítem seleccionado</option>
-                </select>
-                </div>
 
                 <h4>Tipo de Asignación</h4>
                 <div class="form-group">
@@ -297,133 +289,70 @@ function clearFields() {
 
     </script>
 
-    <script>
-    /**
- * Initializes the device selection and assignment functionality.
- * Fetches device data from the API, populates dropdowns, and handles device assignments.
- */
- // Lista global para almacenar los dispositivos asignados
-   
+<script>
 let assignedDevicesList = [];
+let deviceData = [];
 
 document.addEventListener("DOMContentLoaded", function () {
-    const selectDevice = document.getElementById("device");
-    const selectSerial = document.getElementById("serial_number");
     const assignDeviceBtn = document.getElementById("assignDeviceBtn");
     const generateLetterBtn = document.getElementById("generateLetterBtn");
     const assignedDevicesTable = document.getElementById("assignedDevicesTable");
 
-    let deviceData = []; // Stores the list of devices retrieved from the API
+    // ✅ Cargar dispositivos desde la API
+    fetch("http://localhost:8000/getDeviceList")
+        .then(response => response.json())
+        .then(data => {
+            if (!data.devices || data.devices.length === 0) {
+                throw new Error("No hay dispositivos disponibles.");
+            }
 
-    /**
-     * Fetches the list of available devices from the API and populates the device dropdown.
-     */
-    function fetchDevices() {
-        fetch("http://localhost:8000/getDeviceList")
-            .then(response => response.json())
-            .then(data => {
-                console.log("📡 Received device data:", data); // ✅ Log API response
+            deviceData = data.devices;
+            console.log("✅ Lista de dispositivos cargada:", deviceData);
+        })
+        .catch(error => {
+            console.error("❌ Error al obtener dispositivos:", error);
+            alert("No se pudo cargar la lista de dispositivos.");
+        });
 
-                if (!data.devices || data.devices.length === 0) {
-                    throw new Error("No hay dispositivos disponibles."); // ❗ Message displayed to the user in Spanish
-                }
-
-                deviceData = data.devices; // Store data globally
-
-                // Clear and populate the device dropdown
-                selectDevice.innerHTML = '<option selected>Seleccione un dispositivo</option>';
-                data.devices.forEach((device, index) => {
-                    let option = document.createElement("option");
-                    option.value = index;
-                    option.textContent = `${device.display_name} (${device.model_category})`;
-                    selectDevice.appendChild(option);
-                });
-
-                console.log("✅ Devices added to the dropdown."); // ✅ Log when devices are loaded
-            })
-            .catch(error => {
-                console.error("❌ Error fetching devices:", error);
-                alert("No se pudo cargar la lista de dispositivos."); // ❗ Message displayed to the user in Spanish
-            });
-    }
-
-    /**
-     * Populates the serial number dropdown when a device is selected.
-     */
-    selectDevice.addEventListener("change", function () {
-        let selectedIndex = this.value;
-
-        if (selectedIndex === "Seleccione un dispositivo") {
-            selectSerial.innerHTML = '<option selected>Muestra Números de serie SNOW del ítem seleccionado</option>';
-            return;
-        }
-
-        let selectedDevice = deviceData[selectedIndex];
-
-        // Clear and populate the serial number dropdown
-        selectSerial.innerHTML = '<option selected>Muestra Números de serie SNOW del ítem seleccionado</option>';
-
-        if (selectedDevice.serial_number.trim() !== "") {
-            let option = document.createElement("option");
-            option.value = selectedDevice.serial_number;
-            option.textContent = selectedDevice.serial_number;
-            selectSerial.appendChild(option);
-        }
-
-        console.log("✅ Serial numbers loaded for:", selectedDevice.display_name); // ✅ Log when serial numbers are populated
-    });
-
-    /**
-     * Handles the assignment of a selected device to the table.
-     */
-    
-
+    // ✅ Asignar dispositivo por número de serie ingresado
     assignDeviceBtn.addEventListener("click", function (event) {
-        event.preventDefault(); // 🛑 Prevents the page from reloading
+        event.preventDefault();
 
-        let selectedIndex = selectDevice.value;
-        let selectedSerial = selectSerial.value;
+        const serialInput = document.getElementById("serialInput").value.trim().toUpperCase();
 
-        if (selectedIndex === "Seleccione un dispositivo" || selectedSerial === "Muestra Números de serie SNOW del ítem seleccionado") {
-            alert("Por favor, seleccione un dispositivo y un número de serie."); // ❗ Message displayed to the user in Spanish
+        const selectedDevice = deviceData.find(device =>
+            device.serial_number.trim().toUpperCase() === serialInput
+        );
+
+        if (!selectedDevice) {
+            alert("Número de serie no encontrado en la base de datos.");
             return;
         }
 
-        let selectedDevice = deviceData[selectedIndex];
+        if (assignedDevicesList.some(d => d.serial_number === selectedDevice.serial_number)) {
+            alert("Este dispositivo ya fue asignado.");
+            return;
+        }
 
-    let existingSerials = assignedDevicesList.map(device => device.serial_number);
-    if (existingSerials.includes(selectedDevice.serial_number)) {
-        alert("Este dispositivo ya ha sido asignado.");
-        return;
-    }
+        const row = assignedDevicesTable.insertRow();
+        row.insertCell(0).innerText = selectedDevice.display_name;
+        row.insertCell(1).innerText = selectedDevice.asset_tag;
+        row.insertCell(2).innerText = selectedDevice.serial_number;
 
+        assignedDevicesList.push({
+            display_name: selectedDevice.display_name,
+            asset_tag: selectedDevice.asset_tag,
+            serial_number: selectedDevice.serial_number
+        });
 
-    let row = assignedDevicesTable.insertRow();
-    let cell1 = row.insertCell(0);
-    let cell2 = row.insertCell(1);
-    let cell3 = row.insertCell(2);
+        localStorage.setItem("assignedDevicesList", JSON.stringify(assignedDevicesList));
+        generateLetterBtn.disabled = false;
 
-    cell1.innerText = selectedDevice.display_name;
-    cell2.innerText = selectedDevice.asset_tag;
-    cell3.innerText = selectedDevice.serial_number;
-
-    assignedDevicesList.push({
-        display_name: selectedDevice.display_name,
-        asset_tag: selectedDevice.asset_tag,
-        serial_number: selectedDevice.serial_number
+        console.log("✅ Dispositivo agregado correctamente:", selectedDevice);
     });
-    localStorage.setItem("assignedDevicesList", JSON.stringify(assignedDevicesList));
-
-    console.log("✅ Device added to the table and list:", assignedDevicesList);
-
-    generateLetterBtn.disabled = false; 
-});
-
-
-    // Fetch and populate the devices when the page loads
-    fetchDevices();
 });
 </script>
+
 
 <script>
   /**
