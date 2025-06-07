@@ -22,10 +22,13 @@ use Spatie\Permission\Middleware\RoleMiddleware;
 |--------------------------------------------------------------------------
 */
 
+// 👇 Redirige directamente a la vista dss.blade.php
 Route::get('/', function () {
-    return auth()->check() ? redirect('/dashboard') : view('welcome');
+    return view('dss.dss');
 });
 
+// 🔒 AUTENTICACIÓN DESHABILITADA PARA PRUEBAS
+/*
 Route::get('/auth/redirect/google', function () {
     return Socialite::driver('google')->redirect();
 })->name('google.redirect');
@@ -51,7 +54,10 @@ Route::get('/auth/callback/google', function () {
         return redirect('/')->with('error', 'Error autenticando con Google.');
     }
 });
+*/
 
+// 🔒 Rutas protegidas también deshabilitadas
+/*
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard', function () {
         $user = Auth::user();
@@ -68,7 +74,6 @@ Route::middleware(['auth'])->group(function () {
     });
 });
 
-// ✅ USO DIRECTO DEL MIDDLEWARE SPATIE SIN ALIAS
 Route::middleware(['auth', RoleMiddleware::class . ':admin'])->group(function () {
     Route::get('/admin', [AdminController::class, 'index'])->name('admin.admi');
 });
@@ -84,13 +89,17 @@ Route::get('/logout', function (Request $request) {
     session()->flush();
     return redirect('/')->with('googleLogout', 'https://accounts.google.com/logout');
 })->name('logout');
+*/
 
+// ✅ Rutas públicas de consulta
 Route::get('/api/getUser', [EndUserController::class, 'getUserById']);
 Route::get('/getUserById', [EndUserController::class, 'getUserById']);
 Route::get('/getDeviceList', [DeviceController::class, 'getDeviceList']);
 Route::get('/getTechnicianList', [TechnicianController::class, 'getTechnicianList']);
 
+// ✅ Envío de correo sin autenticación
 Route::post('/enviar-correo', [CorreoController::class, 'enviarCorreo'])->name('enviar.correo');
 
+// ✅ Flujo de carta sin seguridad
 Route::get('/letter/{user_id}', [CartaController::class, 'mostrarCarta'])->name('letter.view');
 Route::post('/letter-confirmar', [CartaController::class, 'generarPDF'])->name('letter.confirmar');

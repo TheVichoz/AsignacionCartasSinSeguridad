@@ -84,8 +84,9 @@ class CartaController extends Controller
             $filePath = storage_path("app/public/{$fileName}");
             $pdf->save($filePath);
 
-            // Upload the PDF to Google Drive
-            $this->driveService->uploadFile($filePath, $fileName);
+// Upload the PDF to Google Drive
+// $this->driveService->uploadFile($filePath, $fileName);
+
 
             // Return the PDF file as a streamed download
             return response()->streamDownload(function () use ($pdf) {
@@ -135,13 +136,13 @@ class CartaController extends Controller
                 'assigned_devices' => $assignedDevices
             ]);
 
-            // Redirect to Google login if not authenticated
+            /* Redirect to Google login if not authenticated
             if (!Auth::check()) {
                 session(['redirect_after_login' => url()->full()]);
                 return redirect()->route('google.redirect');
-            }
+            }*/
 
-            $user = Auth::user();
+            /*$user = Auth::user();*/
 
             // Retrieve employee data using internal service
             $endUserController = new EndUserController();
@@ -154,10 +155,9 @@ class CartaController extends Controller
 
             $employee = $data['employees'][0];
 
-            // Ensure the logged-in user matches the employee data
-            if ($user->email !== $employee['email']) {
-                abort(403, 'No tienes permiso para firmar esta carta.');
-            }
+// if ($user->email !== $employee['email']) {
+//     abort(403, 'No tienes permiso para firmar esta carta.');
+// }
 
             // Return the Blade view with decoded data
             return view('letter', [
