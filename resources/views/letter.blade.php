@@ -157,13 +157,14 @@
     </form>
 </div>
 
+<!-- Script actualizado sin descarga -->
 <script>
-    // Enable submit button only when checkbox is checked
+    // Habilitar el botón solo si el checkbox está marcado
     document.getElementById("acceptCheck").addEventListener("change", function () {
         document.getElementById("submitBtn").disabled = !this.checked;
     });
 
-    // Send form data via fetch and handle the response
+    // Enviar los datos al backend usando fetch (sin descarga)
     document.getElementById("aceptacionForm").addEventListener("submit", function (event) {
         event.preventDefault();
         fetch("{{ route('letter.confirmar') }}", {
@@ -178,16 +179,12 @@
                 tipo_asignacion: "{{ $tipo_asignacion ?? 'Asignación Regular' }}"
             })
         })
-        .then(res => res.blob())
-        .then(blob => {
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'Carta_Asignacion.pdf';
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            alert("✅ Aceptación enviada y PDF generado.");
+        .then(response => {
+            if (response.ok) {
+                alert("✅ Aceptación enviada correctamente. Recibirás el PDF por correo.");
+            } else {
+                alert("❌ Hubo un problema al enviar la aceptación.");
+            }
         })
         .catch(err => {
             alert("❌ Error: " + err.message);

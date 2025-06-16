@@ -3,8 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\NotificacionCorreo;
+use App\Services\BrevoMailer;
 use Exception;
 
 /**
@@ -27,7 +26,7 @@ class CorreoController extends Controller
         try {
             // Retrieve required data from the request
             $userId = $request->input('user_id');
-            $tipoAsignacion = $request->input('tipo_asignacion');
+            $tipoAsignacion = $request->input('tipo_asignacion', 'Asignación Regular');
             $assignedDevices = $request->input('assigned_devices', []);
 
             // Encode the assigned devices list to safely pass it via URL
@@ -45,18 +44,29 @@ class CorreoController extends Controller
 
             $employee = $data['employees'][0];
 
-            // Send the email using the NotificacionCorreo Mailable class
-            Mail::to($employee['email'])->send(new NotificacionCorreo(
+            // Generate the public URL to the letter with base64 devices and tipo_asignacion
+            $link = url("/letter/{$employee['user_id']}") .
+                    "?devices={$encodedDevices}" .
+                    "&tipo_asignacion=" . urlencode($tipoAsignacion);
+
+            // Send the email using Brevo HTTP API
+            $mailer = new BrevoMailer();
+            $ok = $mailer->enviarCorreoConLink(
+                $employee['email'],
                 $employee['display_name'],
-                $tipoAsignacion,
-                $employee['user_id'],
-                $encodedDevices // ✅ sent encoded for secure transport
-            ));
+                $link,
+                $tipoAsignacion
+            );
+
+            if (!$ok) {
+                return response()->json(['error' => 'No se pudo enviar el correo'], 500);
+            }
 
             // Respond with success message
             return response()->json(['success' => 'Correo enviado correctamente']);
         } catch (Exception $e) {
             // Handle any unexpected errors
+            \Log::error('❌ Error en enviarCorreo:', ['error' => $e->getMessage()]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

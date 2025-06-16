@@ -114,9 +114,12 @@
 <body>
 
     <!-- Header with logo -->
-    <header class="header">
-        <img src="{{ asset('img/logo.jpg') }}" alt="Logo">
-    </header>
+<header class="header d-flex justify-content-between px-4">
+    <img src="{{ asset('img/GTIM-Logo.jpeg') }}" alt="GTIM">
+    
+    <img src="{{ asset('img/logo.jpg') }}" alt="Whirlpool">
+</header>
+
 
     <!-- Main container -->
     <main class="content">
@@ -131,7 +134,7 @@
 
                     <!-- User ID input field -->
                     <div class="form-group">
-                        <label class="form-label">User ID</label>
+                        <label class="form-label fw-bold">User ID</label>
                         <input type="text" class="form-control" id="userId" placeholder="Ingrese el ID del usuario">
                     </div>
 
@@ -160,24 +163,22 @@
                 </div>
 
                 <!-- Technician and device selection -->
-                <h4>Técnico</h4>
+                <h4 class="fw-bold">Técnico</h4>
                 <div class="form-group">
-                    <label class="form-label">Técnico que entregará</label>
+
                     <select class="form-select" id="technician">
                         <option selected>Seleccione un técnico</option>
                     </select>
                 </div>
 
-<h4>Dispositivo</h4>
+	<h4 class="fw-bold">Dispositivo</h4>
 <div class="form-group">
-    <label class="form-label">Ingresa el Número de Serie</label>
     <input type="text" class="form-control" id="serialInput" placeholder="Ej: SN123456789">
 </div>
 
 
-                <h4>Tipo de Asignación</h4>
+                <h4 class="fw-bold">Tipo de Asignación</h4>
                 <div class="form-group">
-                    <label class="form-label">Seleccione el tipo de asignación</label>
                     <select class="form-select" id="asignacion">
                         <option selected>Seleccione un tipo de asignación</option>
                     </select>
@@ -185,13 +186,13 @@
 
 
                 <!-- Table of assigned devices -->
-                <h4>Lista de Dispositivos Asignados</h4>
+                <h4 class="fw-bold">Lista de Dispositivos Asignados</h4>
                 <table class="table table-bordered">
     <thead>
         <tr>
-            <th>Descripción Dispositivo</th>
-            <th>Asset Tag</th>
-            <th>Número de Serie</th>
+            <th class="fw-bold">Descripción Dispositivo</th>
+            <th class="fw-bold">Asset Tag</th>
+            <th class="fw-bold">Número de Serie</th>
         </tr>
     </thead>
     <tbody id="assignedDevicesTable">
@@ -234,7 +235,7 @@ document.getElementById('userId').addEventListener('blur', function() {
         return;
     }
 
-    let apiUrl = `http://localhost:8000/getUserById?user_id=${userId}`;
+    let apiUrl = `http://127.0.0.1:8000/getUserById?user_id=${userId}`;
 
     fetch(apiUrl)
         .then(response => {
@@ -299,7 +300,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const assignedDevicesTable = document.getElementById("assignedDevicesTable");
 
     // ✅ Cargar dispositivos desde la API
-    fetch("http://localhost:8000/getDeviceList")
+    fetch("http://127.0.0.1:8000/getDeviceList")
         .then(response => response.json())
         .then(data => {
             if (!data.devices || data.devices.length === 0) {
@@ -366,7 +367,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * Fetches the list of available technicians from the API and populates the dropdown.
      */
     function fetchTechnicians() {
-        fetch("http://localhost:8000/getTechnicianList") // Ensure the API route is correct
+        fetch("http://127.0.0.1:8000/getTechnicianList") // Ensure the API route is correct
             .then(response => {
                 if (!response.ok) {
                     throw new Error("Error al obtener la lista de técnicos."); // ❗ Message displayed to the user in Spanish
@@ -467,7 +468,8 @@ const payload = {
 
     console.log("📤 Enviando correo con la carta de aceptación:", JSON.stringify(payload, null, 2));
 
-    fetch("{{ route('enviar.correo') }}", { 
+    fetch("{{ route('enviar.asset') }}", {
+ 
         method: 'POST',
         headers: {
             'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),

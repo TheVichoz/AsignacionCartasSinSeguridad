@@ -6,61 +6,72 @@ use Illuminate\Http\Request;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use App\Services\GoogleDriveService;
-use Illuminate\Support\Facades\Auth;
+use App\Services\BrevoMailer;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Log;
 
 class CartaController extends Controller
 {
     protected $driveService;
+    protected $brevo;
 
-    /**
-     * Constructor to inject the Google Drive service dependency.
-     *
-     * @param GoogleDriveService $driveService
-     */
-    public function __construct(GoogleDriveService $driveService)
+    public function __construct(GoogleDriveService $driveService, BrevoMailer $brevo)
     {
         $this->driveService = $driveService;
+        $this->brevo = $brevo;
     }
 
-    /**
-     * Generates a PDF document with user and device assignment information,
-     * saves it locally, uploads it to Google Drive, and returns it as a download response.
-     *
-     * @param Request $request
-     * @return \Illuminate\Http\Response
-     */
-    public function generarPDF(Request $request)
+    public function enviarCartaParaAprobacion(Request $request)
     {
         try {
-            // Retrieve data from the incoming request
             $userId = $request->input('user_id');
             $tipoAsignacion = $request->input('tipo_asignacion');
             $assignedDevices = $request->input('assigned_devices', []);
 
-            \Log::info('📥 Datos recibidos en generarPDF:', [
-                'user_id' => $userId,
-                'tipo_asignacion' => $tipoAsignacion,
-                'assigned_devices' => $assignedDevices
-            ]);
+            if (empty($assignedDevices)) {
+                return response()->json(['error' => 'No se recibieron dispositivos.'], 422);
+            }
 
-            // Validate that at least one device is assigned
+            $devicesEncoded = base64_encode(json_encode($assignedDevices));
+            $url = url("/asset/autorizar/{$userId}?devices={$devicesEncoded}&tipo_asignacion={$tipoAsignacion}");
+
+            $this->brevo->enviarCorreoConLink(
+                'pololohdz2000@gmail.com',
+                'Responsable de Revisión',
+                $url,
+                $tipoAsignacion
+            );
+
+            return response()->json(['message' => '✅ Carta enviada al Asset para aprobación']);
+        } catch (\Exception $e) {
+            Log::error('❌ Error en enviarCartaParaAprobacion:', ['error' => $e->getMessage()]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function generarPDF(Request $request)
+    {
+        try {
+            $userId = $request->input('user_id');
+            $tipoAsignacion = $request->input('tipo_asignacion');
+            $assignedDevices = $request->input('assigned_devices', []);
+
+            Log::info('📥 Datos recibidos en generarPDF:', compact('userId', 'tipoAsignacion', 'assignedDevices'));
+
             if (empty($assignedDevices)) {
                 throw new \Exception('❌ No se recibieron dispositivos asignados.');
             }
 
-            // Retrieve user data from external controller/service
             $endUserController = new EndUserController();
             $response = $endUserController->getUserById(new Request(['user_id' => $userId]));
             $data = $response->getData(true);
 
-            // Validate that user data was found
             if (empty($data['employees'])) {
                 throw new \Exception('❌ Empleado no encontrado.');
             }
 
             $employee = $data['employees'][0];
 
-            // Prepare data to be injected into the PDF view
             $pdfData = [
                 'nombreUsuario'    => $employee['display_name'],
                 'userId'           => $employee['user_id'],
@@ -74,77 +85,33 @@ class CartaController extends Controller
                 'assigned_devices' => $assignedDevices
             ];
 
-            \Log::info('✅ Datos enviados a la vista para el PDF:', $pdfData);
-
-            // Generate the PDF using the Blade view
             $pdf = Pdf::loadView('carta_asignacion', $pdfData);
-
-            // Save the PDF locally
             $fileName = "Carta_Asignacion_{$userId}.pdf";
             $filePath = storage_path("app/public/{$fileName}");
             $pdf->save($filePath);
 
-// Upload the PDF to Google Drive
-// $this->driveService->uploadFile($filePath, $fileName);
-
-
-            // Return the PDF file as a streamed download
-            return response()->streamDownload(function () use ($pdf) {
-                echo $pdf->output();
-            }, $fileName, [
-                'Content-Type' => 'application/pdf',
-            ]);
+            return response()->json(['message' => 'Carta generada, guardada y enviada por correo al Asset.'], 200);
         } catch (\Exception $e) {
-            // Log and return any exception that occurs
-            \Log::error('❌ Error en generarPDF:', ['error' => $e->getMessage()]);
+            Log::error('❌ Error en generarPDF:', ['error' => $e->getMessage()]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }
 
-    /**
-     * Displays the letter view for the given user, validating authentication
-     * and matching email identity. It also decodes the assigned devices
-     * from the query string if provided.
-     *
-     * @param Request $request
-     * @param string $user_id
-     * @return \Illuminate\Contracts\View\View|\Illuminate\Http\JsonResponse
-     */
     public function mostrarCarta(Request $request, $user_id)
     {
         try {
             $tipoAsignacion = $request->input('tipo_asignacion', 'Asignación Regular');
-
-            // Try to decode the assigned devices from base64 in the query string
-            $encodedDevices = $request->query('devices');
+            $encodedDevices = $request->query('devices') ?? $request->query('dispositivos');
             $assignedDevices = [];
 
             if ($encodedDevices) {
                 $json = base64_decode($encodedDevices);
                 $decoded = json_decode($json, true);
-
                 if (json_last_error() === JSON_ERROR_NONE) {
                     $assignedDevices = $decoded;
-                } else {
-                    \Log::warning('❗ Error al decodificar dispositivos: JSON inválido');
                 }
             }
 
-            \Log::info('📥 Datos recibidos en mostrarCarta:', [
-                'user_id' => $user_id,
-                'tipo_asignacion' => $tipoAsignacion,
-                'assigned_devices' => $assignedDevices
-            ]);
-
-            /* Redirect to Google login if not authenticated
-            if (!Auth::check()) {
-                session(['redirect_after_login' => url()->full()]);
-                return redirect()->route('google.redirect');
-            }*/
-
-            /*$user = Auth::user();*/
-
-            // Retrieve employee data using internal service
             $endUserController = new EndUserController();
             $response = $endUserController->getUserById(new Request(['user_id' => $user_id]));
             $data = $response->getData(true);
@@ -155,11 +122,6 @@ class CartaController extends Controller
 
             $employee = $data['employees'][0];
 
-// if ($user->email !== $employee['email']) {
-//     abort(403, 'No tienes permiso para firmar esta carta.');
-// }
-
-            // Return the Blade view with decoded data
             return view('letter', [
                 'nombreUsuario'    => $employee['display_name'],
                 'userId'           => $employee['user_id'],
@@ -168,13 +130,146 @@ class CartaController extends Controller
                 'location'         => $employee['location'],
                 'costCenter'       => $employee['cost_center_name'],
                 'supervisor'       => $employee['supervisor'],
-                'fechaAceptacion'  => Carbon::now()->format('d/m/Y H:i:s'),
+                'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
                 'tipo_asignacion'  => $tipoAsignacion,
-                'assigned_devices' => $assignedDevices // ✅ Now properly decoded
+                'assigned_devices' => $assignedDevices
             ]);
-
         } catch (\Exception $e) {
-            \Log::error('❌ Error al mostrar la carta:', ['error' => $e->getMessage()]);
+            Log::error('❌ Error al mostrar la carta:', ['error' => $e->getMessage()]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function vistaParaAsset($user_id, Request $request)
+    {
+        try {
+            $tipoAsignacion = $request->input('tipo_asignacion', 'Asignación Regular');
+            $encodedDevices = $request->query('devices') ?? $request->query('dispositivos');
+            $assignedDevices = [];
+
+            if ($encodedDevices) {
+                $json = base64_decode($encodedDevices);
+                $decoded = json_decode($json, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $assignedDevices = $decoded;
+                }
+            }
+
+            $endUserController = new EndUserController();
+            $response = $endUserController->getUserById(new Request(['user_id' => $user_id]));
+            $data = $response->getData(true);
+
+            if (empty($data['employees'])) {
+                throw new \Exception('Empleado no encontrado.');
+            }
+
+            $employee = $data['employees'][0];
+
+            return view('asset', [
+                'nombreUsuario'    => $employee['display_name'],
+                'userId'           => $employee['user_id'],
+                'email'            => $employee['email'],
+                'position'         => $employee['position'],
+                'location'         => $employee['location'],
+                'costCenter'       => $employee['cost_center_name'],
+                'supervisor'       => $employee['supervisor'],
+                'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
+                'tipo_asignacion'  => $tipoAsignacion,
+                'assigned_devices' => $assignedDevices
+            ]);
+        } catch (\Exception $e) {
+            Log::error('❌ Error en vistaParaAsset:', ['error' => $e->getMessage()]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function aprobarDesdeAsset(Request $request)
+    {
+        try {
+            $userId = $request->input('user_id');
+            $tipoAsignacion = $request->input('tipo_asignacion');
+            $assignedDevices = $request->input('assigned_devices', []);
+
+            if (empty($assignedDevices)) {
+                return response()->json(['error' => 'No se recibieron dispositivos.'], 422);
+            }
+
+            Log::info('🛡️ Asset aprobó carta, se genera PDF y se notificará al usuario', compact('userId', 'tipoAsignacion', 'assignedDevices'));
+
+            $endUserController = new EndUserController();
+            $response = $endUserController->getUserById(new Request(['user_id' => $userId]));
+            $data = $response->getData(true);
+
+            if (empty($data['employees'])) {
+                throw new \Exception('Empleado no encontrado.');
+            }
+
+            $employee = $data['employees'][0];
+            $devicesEncoded = base64_encode(json_encode($assignedDevices));
+            $linkFirma = url("/letter/{$userId}?devices={$devicesEncoded}&tipo_asignacion={$tipoAsignacion}");
+
+            $this->brevo->enviarCorreoConLink(
+                $employee['email'],
+                $employee['display_name'],
+                $linkFirma,
+                $tipoAsignacion
+            );
+
+            return response()->json(['message' => 'Carta aprobada por el Asset. Enlace enviado al usuario. ✅']);
+        } catch (\Exception $e) {
+            Log::error('❌ Error al aprobar desde Asset:', ['error' => $e->getMessage()]);
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function firmarCarta(Request $request)
+    {
+        try {
+            $userId = $request->input('user_id');
+            $tipoAsignacion = $request->input('tipo_asignacion');
+            $assignedDevices = $request->input('assigned_devices', []);
+
+            if (empty($assignedDevices)) {
+                return response()->json(['error' => 'No se recibieron dispositivos.'], 422);
+            }
+
+            $endUserController = new EndUserController();
+            $response = $endUserController->getUserById(new Request(['user_id' => $userId]));
+            $data = $response->getData(true);
+
+            if (empty($data['employees'])) {
+                return response()->json(['error' => 'Empleado no encontrado.'], 404);
+            }
+
+            $employee = $data['employees'][0];
+
+            $pdfData = [
+                'nombreUsuario'    => $employee['display_name'],
+                'userId'           => $employee['user_id'],
+                'email'            => $employee['email'],
+                'position'         => $employee['position'],
+                'location'         => $employee['location'],
+                'costCenter'       => $employee['cost_center_name'],
+                'supervisor'       => $employee['supervisor'],
+                'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
+                'tipo_asignacion'  => $tipoAsignacion,
+                'assigned_devices' => $assignedDevices
+            ];
+
+            $pdf = Pdf::loadView('carta_asignacion', $pdfData);
+            $fileName = "Carta_Firmada_{$userId}.pdf";
+            $filePath = storage_path("app/public/{$fileName}");
+            $pdf->save($filePath);
+
+            Mail::raw('Tu carta de asignación ha sido firmada exitosamente. Se adjunta el documento.', function ($message) use ($employee, $filePath) {
+                $message->to($employee['email'])
+                        ->subject('📄 Carta Firmada')
+                        ->attach($filePath);
+            });
+
+            return response()->json(['message' => 'Carta firmada y enviada al usuario. ✅']);
+        } catch (\Exception $e) {
+            Log::error('❌ Error en firmarCarta:', ['error' => $e->getMessage()]);
             return response()->json(['error' => $e->getMessage()], 500);
         }
     }

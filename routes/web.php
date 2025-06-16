@@ -103,3 +103,8 @@ Route::post('/enviar-correo', [CorreoController::class, 'enviarCorreo'])->name('
 // ✅ Flujo de carta sin seguridad
 Route::get('/letter/{user_id}', [CartaController::class, 'mostrarCarta'])->name('letter.view');
 Route::post('/letter-confirmar', [CartaController::class, 'generarPDF'])->name('letter.confirmar');
+Route::get('/asset/autorizar/{user_id}', [CartaController::class, 'vistaParaAsset'])->name('asset.vista');
+Route::post('/asset/aprobar', [CartaController::class, 'aprobarDesdeAsset'])->name('asset.aprobar');
+Route::post('/letter/firmar', [CartaController::class, 'firmarCarta']);
+Route::post('/letter-confirmar', [CartaController::class, 'firmarCarta'])->name('letter.confirmar');
+Route::post('/enviar-a-asset', [CartaController::class, 'enviarCartaParaAprobacion'])->name('enviar.asset');
