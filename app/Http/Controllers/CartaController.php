@@ -9,6 +9,7 @@ use App\Services\GoogleDriveService;
 use App\Services\BrevoMailer;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Log;
+use App\Models\EndUser; // ✅ Agregado para usar directamente el modelo
 
 class CartaController extends Controller
 {
@@ -42,7 +43,7 @@ class CartaController extends Controller
                 $tipoAsignacion
             );
 
-            return response()->json(['message' => '✅ Carta enviada al Asset para aprobación']);
+            return response()->json(['success' => '✅ Carta enviada al Asset para aprobación']);
         } catch (\Exception $e) {
             Log::error('❌ Error en enviarCartaParaAprobacion:', ['error' => $e->getMessage()]);
             return response()->json(['error' => $e->getMessage()], 500);
@@ -62,24 +63,19 @@ class CartaController extends Controller
                 throw new \Exception('❌ No se recibieron dispositivos asignados.');
             }
 
-            $endUserController = new EndUserController();
-            $response = $endUserController->getUserById(new Request(['user_id' => $userId]));
-            $data = $response->getData(true);
-
-            if (empty($data['employees'])) {
+            $employee = EndUser::where('user_id', trim($userId))->first();
+            if (!$employee) {
                 throw new \Exception('❌ Empleado no encontrado.');
             }
 
-            $employee = $data['employees'][0];
-
             $pdfData = [
-                'nombreUsuario'    => $employee['display_name'],
-                'userId'           => $employee['user_id'],
-                'email'            => $employee['email'],
-                'position'         => $employee['position'],
-                'location'         => $employee['location'],
-                'costCenter'       => $employee['cost_center_name'],
-                'supervisor'       => $employee['supervisor'],
+                'nombreUsuario'    => $employee->display_name,
+                'userId'           => $employee->user_id,
+                'email'            => $employee->email,
+                'position'         => $employee->position,
+                'location'         => $employee->location,
+                'costCenter'       => $employee->cost_center_name,
+                'supervisor'       => $employee->supervisor,
                 'fechaAceptacion'  => Carbon::now()->format('d/m/Y H:i:s'),
                 'tipo_asignacion'  => $tipoAsignacion,
                 'assigned_devices' => $assignedDevices
@@ -112,24 +108,19 @@ class CartaController extends Controller
                 }
             }
 
-            $endUserController = new EndUserController();
-            $response = $endUserController->getUserById(new Request(['user_id' => $user_id]));
-            $data = $response->getData(true);
-
-            if (empty($data['employees'])) {
+            $employee = EndUser::where('user_id', trim($user_id))->first();
+            if (!$employee) {
                 throw new \Exception('Empleado no encontrado.');
             }
 
-            $employee = $data['employees'][0];
-
             return view('letter', [
-                'nombreUsuario'    => $employee['display_name'],
-                'userId'           => $employee['user_id'],
-                'email'            => $employee['email'],
-                'position'         => $employee['position'],
-                'location'         => $employee['location'],
-                'costCenter'       => $employee['cost_center_name'],
-                'supervisor'       => $employee['supervisor'],
+                'nombreUsuario'    => $employee->display_name,
+                'userId'           => $employee->user_id,
+                'email'            => $employee->email,
+                'position'         => $employee->position,
+                'location'         => $employee->location,
+                'costCenter'       => $employee->cost_center_name,
+                'supervisor'       => $employee->supervisor,
                 'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
                 'tipo_asignacion'  => $tipoAsignacion,
                 'assigned_devices' => $assignedDevices
@@ -143,6 +134,9 @@ class CartaController extends Controller
     public function vistaParaAsset($user_id, Request $request)
     {
         try {
+            $user_id = trim($user_id);
+            Log::info('🔍 vistaParaAsset - user_id recibido:', [$user_id]);
+
             $tipoAsignacion = $request->input('tipo_asignacion', 'Asignación Regular');
             $encodedDevices = $request->query('devices') ?? $request->query('dispositivos');
             $assignedDevices = [];
@@ -155,24 +149,19 @@ class CartaController extends Controller
                 }
             }
 
-            $endUserController = new EndUserController();
-            $response = $endUserController->getUserById(new Request(['user_id' => $user_id]));
-            $data = $response->getData(true);
-
-            if (empty($data['employees'])) {
+            $employee = EndUser::where('user_id', $user_id)->first();
+            if (!$employee) {
                 throw new \Exception('Empleado no encontrado.');
             }
 
-            $employee = $data['employees'][0];
-
             return view('asset', [
-                'nombreUsuario'    => $employee['display_name'],
-                'userId'           => $employee['user_id'],
-                'email'            => $employee['email'],
-                'position'         => $employee['position'],
-                'location'         => $employee['location'],
-                'costCenter'       => $employee['cost_center_name'],
-                'supervisor'       => $employee['supervisor'],
+                'nombreUsuario'    => $employee->display_name,
+                'userId'           => $employee->user_id,
+                'email'            => $employee->email,
+                'position'         => $employee->position,
+                'location'         => $employee->location,
+                'costCenter'       => $employee->cost_center_name,
+                'supervisor'       => $employee->supervisor,
                 'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
                 'tipo_asignacion'  => $tipoAsignacion,
                 'assigned_devices' => $assignedDevices
@@ -196,21 +185,17 @@ class CartaController extends Controller
 
             Log::info('🛡️ Asset aprobó carta, se genera PDF y se notificará al usuario', compact('userId', 'tipoAsignacion', 'assignedDevices'));
 
-            $endUserController = new EndUserController();
-            $response = $endUserController->getUserById(new Request(['user_id' => $userId]));
-            $data = $response->getData(true);
-
-            if (empty($data['employees'])) {
+            $employee = EndUser::where('user_id', trim($userId))->first();
+            if (!$employee) {
                 throw new \Exception('Empleado no encontrado.');
             }
 
-            $employee = $data['employees'][0];
             $devicesEncoded = base64_encode(json_encode($assignedDevices));
             $linkFirma = url("/letter/{$userId}?devices={$devicesEncoded}&tipo_asignacion={$tipoAsignacion}");
 
             $this->brevo->enviarCorreoConLink(
-                $employee['email'],
-                $employee['display_name'],
+                $employee->email,
+                $employee->display_name,
                 $linkFirma,
                 $tipoAsignacion
             );
@@ -233,24 +218,19 @@ class CartaController extends Controller
                 return response()->json(['error' => 'No se recibieron dispositivos.'], 422);
             }
 
-            $endUserController = new EndUserController();
-            $response = $endUserController->getUserById(new Request(['user_id' => $userId]));
-            $data = $response->getData(true);
-
-            if (empty($data['employees'])) {
+            $employee = EndUser::where('user_id', trim($userId))->first();
+            if (!$employee) {
                 return response()->json(['error' => 'Empleado no encontrado.'], 404);
             }
 
-            $employee = $data['employees'][0];
-
             $pdfData = [
-                'nombreUsuario'    => $employee['display_name'],
-                'userId'           => $employee['user_id'],
-                'email'            => $employee['email'],
-                'position'         => $employee['position'],
-                'location'         => $employee['location'],
-                'costCenter'       => $employee['cost_center_name'],
-                'supervisor'       => $employee['supervisor'],
+                'nombreUsuario'    => $employee->display_name,
+                'userId'           => $employee->user_id,
+                'email'            => $employee->email,
+                'position'         => $employee->position,
+                'location'         => $employee->location,
+                'costCenter'       => $employee->cost_center_name,
+                'supervisor'       => $employee->supervisor,
                 'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
                 'tipo_asignacion'  => $tipoAsignacion,
                 'assigned_devices' => $assignedDevices
@@ -262,7 +242,7 @@ class CartaController extends Controller
             $pdf->save($filePath);
 
             Mail::raw('Tu carta de asignación ha sido firmada exitosamente. Se adjunta el documento.', function ($message) use ($employee, $filePath) {
-                $message->to($employee['email'])
+                $message->to($employee->email)
                         ->subject('📄 Carta Firmada')
                         ->attach($filePath);
             });

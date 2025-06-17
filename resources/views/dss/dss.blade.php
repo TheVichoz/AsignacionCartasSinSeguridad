@@ -202,7 +202,7 @@
 
                 <!-- Submit button -->
                 <div class="text-center">
-                    <button type="submit" id="assignDeviceBtn" class="btn btn-primary">Asignar Dispositivos</button>
+<button type="button" id="assignDeviceBtn" class="btn btn-primary">Asignar Dispositivos</button>
                 </div>
 
                 <div class="text-center mt-3">
@@ -316,41 +316,50 @@ document.addEventListener("DOMContentLoaded", function () {
         });
 
     // ✅ Asignar dispositivo por número de serie ingresado
-    assignDeviceBtn.addEventListener("click", function (event) {
-        event.preventDefault();
+assignDeviceBtn.addEventListener("click", function (event) {
+    event.preventDefault();
 
-        const serialInput = document.getElementById("serialInput").value.trim().toUpperCase();
+    const serialInput = document.getElementById("serialInput");
+    const serial = serialInput.value.trim().toUpperCase();
 
-        const selectedDevice = deviceData.find(device =>
-            device.serial_number.trim().toUpperCase() === serialInput
-        );
+    const selectedDevice = deviceData.find(device =>
+        device.serial_number.trim().toUpperCase() === serial
+    );
 
-        if (!selectedDevice) {
-            alert("Número de serie no encontrado en la base de datos.");
-            return;
-        }
+    if (!selectedDevice) {
+        alert("Número de serie no encontrado en la base de datos.");
+        return;
+    }
 
-        if (assignedDevicesList.some(d => d.serial_number === selectedDevice.serial_number)) {
-            alert("Este dispositivo ya fue asignado.");
-            return;
-        }
+    if (assignedDevicesList.some(d => d.serial_number === selectedDevice.serial_number)) {
+        alert("Este dispositivo ya fue asignado.");
+        return;
+    }
 
-        const row = assignedDevicesTable.insertRow();
-        row.insertCell(0).innerText = selectedDevice.display_name;
-        row.insertCell(1).innerText = selectedDevice.asset_tag;
-        row.insertCell(2).innerText = selectedDevice.serial_number;
+    const descripcion = `${selectedDevice.brand} ${selectedDevice.model}` || "Sin descripción";
 
-        assignedDevicesList.push({
-            display_name: selectedDevice.display_name,
-            asset_tag: selectedDevice.asset_tag,
-            serial_number: selectedDevice.serial_number
-        });
+const row = assignedDevicesTable.insertRow();
+row.insertCell(0).innerText = `${selectedDevice.brand} ${selectedDevice.model}`; // 👈 esto reemplaza el display_name
+row.insertCell(1).innerText = selectedDevice.asset_tag || 'Sin Asset';
+row.insertCell(2).innerText = selectedDevice.serial_number;
 
-        localStorage.setItem("assignedDevicesList", JSON.stringify(assignedDevicesList));
-        generateLetterBtn.disabled = false;
+assignedDevicesList.push({
+    display_name: `${selectedDevice.brand} ${selectedDevice.model}`,
+    asset_tag: selectedDevice.asset_tag || 'Sin Asset',
+    serial_number: selectedDevice.serial_number
+});
 
-        console.log("✅ Dispositivo agregado correctamente:", selectedDevice);
-    });
+
+    localStorage.setItem("assignedDevicesList", JSON.stringify(assignedDevicesList));
+    generateLetterBtn.disabled = false;
+
+    console.log("✅ Dispositivo agregado correctamente:", selectedDevice);
+
+    serialInput.value = '';
+    serialInput.focus();
+});
+
+
 });
 </script>
 
@@ -480,9 +489,14 @@ const payload = {
     .then(response => response.json())
     .then(data => {
     if(data.success){
-        const alertSuccess = document.getElementById('alertSuccess');
-        alertSuccess.textContent = data.success;
-        alertSuccess.classList.remove('d-none');
+    const alertSuccess = document.getElementById('alertSuccess');
+    alertSuccess.textContent = data.success;
+    alertSuccess.classList.remove('d-none');
+
+    setTimeout(() => {
+        alertSuccess.classList.add('d-none');
+        alertSuccess.textContent = '';
+    }, 4000);
     } else if(data.error) {
         alert('Error al enviar correo: ' + data.error);
     }

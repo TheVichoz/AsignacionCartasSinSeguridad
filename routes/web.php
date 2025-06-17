@@ -12,6 +12,9 @@ use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\TechnicianController;
 use App\Http\Controllers\CorreoController;
 use App\Http\Controllers\CartaController;
+use App\Models\EndUser;
+use App\Models\Technician;
+use App\Models\Device;
 
 // IMPORTACIÓN DIRECTA DEL MIDDLEWARE DE SPATIE
 use Spatie\Permission\Middleware\RoleMiddleware;
@@ -108,3 +111,25 @@ Route::post('/asset/aprobar', [CartaController::class, 'aprobarDesdeAsset'])->na
 Route::post('/letter/firmar', [CartaController::class, 'firmarCarta']);
 Route::post('/letter-confirmar', [CartaController::class, 'firmarCarta'])->name('letter.confirmar');
 Route::post('/enviar-a-asset', [CartaController::class, 'enviarCartaParaAprobacion'])->name('enviar.asset');
+Route::get('/getUserById', function (\Illuminate\Http\Request $request) {
+    $userId = $request->query('user_id');
+    $user = EndUser::where('user_id', $userId)->first();
+
+    return response()->json([
+        'employees' => $user ? [$user] : []
+    ]);
+});
+Route::get('/getTechnicianList', function () {
+    $technicians = Technician::all();
+
+    return response()->json([
+        'technicians' => $technicians
+    ]);
+});
+Route::get('/getDeviceList', function () {
+    $devices = Device::all();
+
+    return response()->json([
+        'devices' => $devices
+    ]);
+});

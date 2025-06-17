@@ -16,14 +16,25 @@ return new class extends Migration
      *
      * @return void
      */
-    public function up(): void
-    {
-        Schema::create('tecnicos', function (Blueprint $table) {
-            $table->id(); // Unique technician identifier (auto-increment)
-            $table->string('correo')->unique(); // Technician's email address (unique)
-            $table->timestamps(); // Timestamp fields (created_at and updated_at)
-        });
-    }
+public function up(): void
+{
+    Schema::create('tecnicos', function (Blueprint $table) {
+        $table->id();
+        $table->string('user_id')->unique();
+        $table->string('name');
+        $table->string('display_name');
+        $table->string('email')->unique();
+        $table->string('position')->nullable();
+        $table->string('location')->nullable();
+        $table->string('cost_center_account_number')->nullable();
+        $table->string('cost_center_name')->nullable();
+        $table->string('supervisor')->nullable();
+        $table->string('type')->nullable();
+        $table->string('password');
+        $table->timestamps();
+    });
+}
+
 
     /**
      * Reverses the migration by deleting the "tecnicos" table.
