@@ -188,28 +188,56 @@
                 <!-- Table of assigned devices -->
                 <h4 class="fw-bold">Lista de Dispositivos Asignados</h4>
                 <table class="table table-bordered">
-    <thead>
-        <tr>
-            <th class="fw-bold">Descripción Dispositivo</th>
-            <th class="fw-bold">Asset Tag</th>
-            <th class="fw-bold">Número de Serie</th>
-        </tr>
-    </thead>
+<thead>
+    <tr>
+        <th class="fw-bold">Descripción Dispositivo</th>
+        <th class="fw-bold">Asset Tag</th>
+        <th class="fw-bold">Número de Serie</th>
+        <th class="fw-bold">Accesorio</th>
+        <th class="fw-bold">Folio Accesorio</th>
+    </tr>
+</thead>
+
     <tbody id="assignedDevicesTable">
         
     </tbody>
 </table>
+<h4 class="fw-bold mt-4">Retirar Dispositivo</h4>
+<div class="form-group">
+    <input type="text" class="form-control" id="serialInputRetiro" placeholder="Ej: SN987654321">
+</div>
+
+
+<h4 class="fw-bold">Lista de Dispositivos Retirados</h4>
+<table class="table table-bordered">
+<thead>
+    <tr>
+        <th class="fw-bold">Descripción Dispositivo</th>
+        <th class="fw-bold">Asset Tag</th>
+        <th class="fw-bold">Número de Serie</th>
+        <th class="fw-bold">Accesorio</th>
+        <th class="fw-bold">Folio Accesorio</th>
+    </tr>
+</thead>
+
+    <tbody id="retiredDevicesTable"></tbody>
+</table>
+
 
                 <!-- Submit button -->
-                <div class="text-center">
-<button type="button" id="assignDeviceBtn" class="btn btn-primary">Asignar Dispositivos</button>
-                </div>
+
 
                 <div class="text-center mt-3">
     <button type="button" id="generateLetterBtn" class="btn btn-success" disabled>
         Generar carta de asignación
     </button>
 </div>
+<!-- Botones alineados -->
+<div class="d-flex justify-content-center gap-3 my-3">
+    <button type="button" id="assignDeviceBtn" class="btn btn-primary">Asignar Dispositivo</button>
+    <button type="button" id="retirarDeviceBtn" class="btn btn-warning">Retirar Dispositivo</button>
+</div>
+
 <div id="alertSuccess" class="alert alert-success mt-2 d-none"></div>
             </form>
         </div>
@@ -292,76 +320,113 @@ function clearFields() {
 
 <script>
 let assignedDevicesList = [];
+let retiredDevicesList = [];
 let deviceData = [];
 
 document.addEventListener("DOMContentLoaded", function () {
     const assignDeviceBtn = document.getElementById("assignDeviceBtn");
+    const retirarDeviceBtn = document.getElementById("retirarDeviceBtn");
     const generateLetterBtn = document.getElementById("generateLetterBtn");
-    const assignedDevicesTable = document.getElementById("assignedDevicesTable");
 
-    // ✅ Cargar dispositivos desde la API
+    const assignedDevicesTable = document.getElementById("assignedDevicesTable");
+    const retiredDevicesTable = document.getElementById("retiredDevicesTable");
+
     fetch("http://127.0.0.1:8000/getDeviceList")
         .then(response => response.json())
         .then(data => {
-            if (!data.devices || data.devices.length === 0) {
-                throw new Error("No hay dispositivos disponibles.");
-            }
-
             deviceData = data.devices;
-            console.log("✅ Lista de dispositivos cargada:", deviceData);
         })
         .catch(error => {
             console.error("❌ Error al obtener dispositivos:", error);
             alert("No se pudo cargar la lista de dispositivos.");
         });
 
-    // ✅ Asignar dispositivo por número de serie ingresado
-assignDeviceBtn.addEventListener("click", function (event) {
-    event.preventDefault();
+    // === Asignar dispositivo ===
+    assignDeviceBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        const serial = document.getElementById("serialInput").value.trim().toUpperCase();
+        const selectedDevice = deviceData.find(d => d.serial_number.toUpperCase() === serial);
+        if (!selectedDevice) return alert("No encontrado.");
 
-    const serialInput = document.getElementById("serialInput");
-    const serial = serialInput.value.trim().toUpperCase();
+        if (assignedDevicesList.some(d => d.serial_number === serial))
+            return alert("Ya agregado.");
 
-    const selectedDevice = deviceData.find(device =>
-        device.serial_number.trim().toUpperCase() === serial
-    );
+        const row = assignedDevicesTable.insertRow();
+        row.insertCell(0).innerText = `${selectedDevice.brand} ${selectedDevice.model}`;
 
-    if (!selectedDevice) {
-        alert("Número de serie no encontrado en la base de datos.");
-        return;
+        const assetInput = crearInput(selectedDevice.asset_tag);
+        row.insertCell(1).appendChild(assetInput);
+
+        row.insertCell(2).innerText = serial;
+
+        const accInput = crearInput("");
+        const folioInput = crearInput("");
+        row.insertCell(3).appendChild(accInput);
+        row.insertCell(4).appendChild(folioInput);
+
+        assignedDevicesList.push({
+            display_name: `${selectedDevice.brand} ${selectedDevice.model}`,
+            get asset_tag() { return assetInput.value; },
+            serial_number: serial,
+            get accesorio() { return accInput.value; },
+            get folio_accesorio() { return folioInput.value; }
+        });
+            // Habilitar el botón de generar carta si hay al menos un dispositivo
+    if (assignedDevicesList.length > 0) {
+        generateLetterBtn.disabled = false;
     }
 
-    if (assignedDevicesList.some(d => d.serial_number === selectedDevice.serial_number)) {
-        alert("Este dispositivo ya fue asignado.");
-        return;
+
+        localStorage.setItem("assignedDevicesList", JSON.stringify(assignedDevicesList));
+        document.getElementById("serialInput").value = '';
+    });
+
+    // === Retirar dispositivo ===
+    retirarDeviceBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        const serial = document.getElementById("serialInputRetiro").value.trim().toUpperCase();
+        const selectedDevice = deviceData.find(d => d.serial_number.toUpperCase() === serial);
+        if (!selectedDevice) return alert("No encontrado.");
+
+        if (retiredDevicesList.some(d => d.serial_number === serial))
+            return alert("Ya marcado para retiro.");
+
+        const row = retiredDevicesTable.insertRow();
+        row.insertCell(0).innerText = `${selectedDevice.brand} ${selectedDevice.model}`;
+
+        const assetInput = crearInput(selectedDevice.asset_tag);
+        row.insertCell(1).appendChild(assetInput);
+
+        row.insertCell(2).innerText = serial;
+
+        const accInput = crearInput("");
+        const folioInput = crearInput("");
+        row.insertCell(3).appendChild(accInput);
+        row.insertCell(4).appendChild(folioInput);
+
+        retiredDevicesList.push({
+            display_name: `${selectedDevice.brand} ${selectedDevice.model}`,
+            get asset_tag() { return assetInput.value; },
+            serial_number: serial,
+            get accesorio() { return accInput.value; },
+            get folio_accesorio() { return folioInput.value; }
+        });
+
+        localStorage.setItem("retiredDevicesList", JSON.stringify(retiredDevicesList));
+        document.getElementById("serialInputRetiro").value = '';
+    });
+
+    function crearInput(valor) {
+        const input = document.createElement("input");
+        input.type = "text";
+        input.className = "form-control";
+        input.value = valor || "";
+        return input;
     }
-
-    const descripcion = `${selectedDevice.brand} ${selectedDevice.model}` || "Sin descripción";
-
-const row = assignedDevicesTable.insertRow();
-row.insertCell(0).innerText = `${selectedDevice.brand} ${selectedDevice.model}`; // 👈 esto reemplaza el display_name
-row.insertCell(1).innerText = selectedDevice.asset_tag || 'Sin Asset';
-row.insertCell(2).innerText = selectedDevice.serial_number;
-
-assignedDevicesList.push({
-    display_name: `${selectedDevice.brand} ${selectedDevice.model}`,
-    asset_tag: selectedDevice.asset_tag || 'Sin Asset',
-    serial_number: selectedDevice.serial_number
-});
-
-
-    localStorage.setItem("assignedDevicesList", JSON.stringify(assignedDevicesList));
-    generateLetterBtn.disabled = false;
-
-    console.log("✅ Dispositivo agregado correctamente:", selectedDevice);
-
-    serialInput.value = '';
-    serialInput.focus();
-});
-
-
 });
 </script>
+
+
 
 
 <script>
@@ -471,8 +536,10 @@ document.getElementById('generateLetterBtn').addEventListener('click', function 
 const payload = {
     user_id: userId,
     tipo_asignacion: tipoAsignacion || "Sin especificar",
-    assigned_devices: assignedDevicesList
+    assigned_devices: assignedDevicesList,
+    retired_devices: retiredDevicesList
 };
+
 
 
     console.log("📤 Enviando correo con la carta de aceptación:", JSON.stringify(payload, null, 2));

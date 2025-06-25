@@ -85,22 +85,54 @@
     @foreach ($assigned_devices as $index => $device)
         <h6>Dispositivo #{{ $index + 1 }}</h6>
         <table>
-            <thead>
-                <tr>
-                    <th>Descripción</th>
-                    <th>Asset Tag</th>
-                    <th>Número de Serie</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>{{ $device['display_name'] ?? 'N/A' }}</td>
-                    <td>{{ $device['asset_tag'] ?? 'N/A' }}</td>
-                    <td>{{ $device['serial_number'] ?? 'N/A' }}</td>
-                </tr>
-            </tbody>
+<thead>
+    <tr>
+        <th>Descripción</th>
+        <th>Asset Tag</th>
+        <th>Número de Serie</th>
+        <th>Accesorio</th>
+        <th>Folio Accesorio</th>
+    </tr>
+</thead>
+<tbody>
+    <tr>
+        <td>{{ $device['display_name'] ?? 'N/A' }}</td>
+        <td>{{ $device['asset_tag'] ?? 'N/A' }}</td>
+        <td>{{ $device['serial_number'] ?? 'N/A' }}</td>
+        <td>{{ $device['accesorio'] ?? 'N/A' }}</td>
+        <td>{{ $device['folio_accesorio'] ?? 'N/A' }}</td>
+    </tr>
+</tbody>
+
         </table>
     @endforeach
+@if (!empty($retired_devices))
+    <h5 class="fw-bold">Lista de Dispositivos Retirados</h5>
+    @foreach ($retired_devices as $index => $device)
+        <h6>Dispositivo Retirado #{{ $index + 1 }}</h6>
+        <table>
+<thead>
+    <tr>
+        <th>Descripción</th>
+        <th>Asset Tag</th>
+        <th>Número de Serie</th>
+        <th>Accesorio</th>
+        <th>Folio Accesorio</th>
+    </tr>
+</thead>
+<tbody>
+    <tr>
+        <td>{{ $device['display_name'] ?? 'N/A' }}</td>
+        <td>{{ $device['asset_tag'] ?? 'N/A' }}</td>
+        <td>{{ $device['serial_number'] ?? 'N/A' }}</td>
+        <td>{{ $device['accesorio'] ?? 'N/A' }}</td>
+        <td>{{ $device['folio_accesorio'] ?? 'N/A' }}</td>
+    </tr>
+</tbody>
+
+        </table>
+    @endforeach
+@endif
 
     <!-- Checkbox y botón de autorización -->
     <form id="assetApprovalForm">
@@ -131,6 +163,7 @@
             body: JSON.stringify({
                 user_id: "{{ $userId }}",
                 assigned_devices: @json($assigned_devices),
+                retired_devices: @json($retired_devices),
                 tipo_asignacion: "{{ $tipo_asignacion ?? 'Asignación Regular' }}"
             })
         })

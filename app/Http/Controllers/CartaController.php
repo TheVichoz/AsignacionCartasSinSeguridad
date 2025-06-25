@@ -25,16 +25,20 @@ class CartaController extends Controller
     public function enviarCartaParaAprobacion(Request $request)
     {
         try {
-            $userId = $request->input('user_id');
-            $tipoAsignacion = $request->input('tipo_asignacion');
-            $assignedDevices = $request->input('assigned_devices', []);
+$userId = $request->input('user_id');
+$tipoAsignacion = $request->input('tipo_asignacion');
+$assignedDevices = $request->input('assigned_devices', []);
+$retiredDevices = $request->input('retired_devices', []);
+
 
             if (empty($assignedDevices)) {
                 return response()->json(['error' => 'No se recibieron dispositivos.'], 422);
             }
 
-            $devicesEncoded = base64_encode(json_encode($assignedDevices));
-            $url = url("/asset/autorizar/{$userId}?devices={$devicesEncoded}&tipo_asignacion={$tipoAsignacion}");
+$devicesEncoded = base64_encode(json_encode($assignedDevices));
+$retiredEncoded = base64_encode(json_encode($retiredDevices));
+$url = url("/asset/autorizar/{$userId}?devices={$devicesEncoded}&retirados={$retiredEncoded}&tipo_asignacion={$tipoAsignacion}");
+
 
             $this->brevo->enviarCorreoConLink(
                 'pololohdz2000@gmail.com',
@@ -56,6 +60,8 @@ class CartaController extends Controller
             $userId = $request->input('user_id');
             $tipoAsignacion = $request->input('tipo_asignacion');
             $assignedDevices = $request->input('assigned_devices', []);
+            $retiredDevices = $request->input('retired_devices', []);
+
 
             Log::info('📥 Datos recibidos en generarPDF:', compact('userId', 'tipoAsignacion', 'assignedDevices'));
 
@@ -78,7 +84,8 @@ class CartaController extends Controller
                 'supervisor'       => $employee->supervisor,
                 'fechaAceptacion'  => Carbon::now()->format('d/m/Y H:i:s'),
                 'tipo_asignacion'  => $tipoAsignacion,
-                'assigned_devices' => $assignedDevices
+                'assigned_devices' => $assignedDevices,
+                'retired_devices' => $retiredDevices
             ];
 
             $pdf = Pdf::loadView('carta_asignacion', $pdfData);
@@ -93,43 +100,56 @@ class CartaController extends Controller
         }
     }
 
-    public function mostrarCarta(Request $request, $user_id)
-    {
-        try {
-            $tipoAsignacion = $request->input('tipo_asignacion', 'Asignación Regular');
-            $encodedDevices = $request->query('devices') ?? $request->query('dispositivos');
-            $assignedDevices = [];
+public function mostrarCarta(Request $request, $user_id)
+{
+    try {
+        $tipoAsignacion = $request->input('tipo_asignacion', 'Asignación Regular');
 
-            if ($encodedDevices) {
-                $json = base64_decode($encodedDevices);
-                $decoded = json_decode($json, true);
-                if (json_last_error() === JSON_ERROR_NONE) {
-                    $assignedDevices = $decoded;
-                }
+        // DECODIFICAR dispositivos asignados
+        $encodedDevices = $request->query('devices') ?? $request->query('dispositivos');
+        $assignedDevices = [];
+        if ($encodedDevices) {
+            $json = base64_decode($encodedDevices);
+            $decoded = json_decode($json, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $assignedDevices = $decoded;
             }
-
-            $employee = EndUser::where('user_id', trim($user_id))->first();
-            if (!$employee) {
-                throw new \Exception('Empleado no encontrado.');
-            }
-
-            return view('letter', [
-                'nombreUsuario'    => $employee->display_name,
-                'userId'           => $employee->user_id,
-                'email'            => $employee->email,
-                'position'         => $employee->position,
-                'location'         => $employee->location,
-                'costCenter'       => $employee->cost_center_name,
-                'supervisor'       => $employee->supervisor,
-                'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
-                'tipo_asignacion'  => $tipoAsignacion,
-                'assigned_devices' => $assignedDevices
-            ]);
-        } catch (\Exception $e) {
-            Log::error('❌ Error al mostrar la carta:', ['error' => $e->getMessage()]);
-            return response()->json(['error' => $e->getMessage()], 500);
         }
+
+        // DECODIFICAR dispositivos retirados (nuevo)
+        $retiredDevices = [];
+        $encodedRetirados = $request->query('retirados');
+        if ($encodedRetirados) {
+            $json = base64_decode($encodedRetirados);
+            $decoded = json_decode($json, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $retiredDevices = $decoded;
+            }
+        }
+
+        $employee = EndUser::where('user_id', trim($user_id))->first();
+        if (!$employee) {
+            throw new \Exception('Empleado no encontrado.');
+        }
+
+        return view('letter', [
+            'nombreUsuario'    => $employee->display_name,
+            'userId'           => $employee->user_id,
+            'email'            => $employee->email,
+            'position'         => $employee->position,
+            'location'         => $employee->location,
+            'costCenter'       => $employee->cost_center_name,
+            'supervisor'       => $employee->supervisor,
+            'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
+            'tipo_asignacion'  => $tipoAsignacion,
+            'assigned_devices' => $assignedDevices,
+            'retired_devices'  => $retiredDevices
+        ]);
+    } catch (\Exception $e) {
+        Log::error('❌ Error al mostrar la carta:', ['error' => $e->getMessage()]);
+        return response()->json(['error' => $e->getMessage()], 500);
     }
+}
 
     public function vistaParaAsset($user_id, Request $request)
     {
@@ -148,6 +168,16 @@ class CartaController extends Controller
                     $assignedDevices = $decoded;
                 }
             }
+            $encodedRetirados = $request->query('retirados');
+
+if ($encodedRetirados) {
+    $json = base64_decode($encodedRetirados);
+    $decoded = json_decode($json, true);
+    if (json_last_error() === JSON_ERROR_NONE) {
+        $retiredDevices = $decoded;
+    }
+}
+
 
             $employee = EndUser::where('user_id', $user_id)->first();
             if (!$employee) {
@@ -164,7 +194,8 @@ class CartaController extends Controller
                 'supervisor'       => $employee->supervisor,
                 'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
                 'tipo_asignacion'  => $tipoAsignacion,
-                'assigned_devices' => $assignedDevices
+                'assigned_devices' => $assignedDevices,
+                    'retired_devices'  => $retiredDevices
             ]);
         } catch (\Exception $e) {
             Log::error('❌ Error en vistaParaAsset:', ['error' => $e->getMessage()]);
@@ -177,7 +208,8 @@ class CartaController extends Controller
         try {
             $userId = $request->input('user_id');
             $tipoAsignacion = $request->input('tipo_asignacion');
-            $assignedDevices = $request->input('assigned_devices', []);
+$assignedDevices = $request->input('assigned_devices', []);
+$retiredDevices = $request->input('retired_devices', []);
 
             if (empty($assignedDevices)) {
                 return response()->json(['error' => 'No se recibieron dispositivos.'], 422);
@@ -190,8 +222,10 @@ class CartaController extends Controller
                 throw new \Exception('Empleado no encontrado.');
             }
 
-            $devicesEncoded = base64_encode(json_encode($assignedDevices));
-            $linkFirma = url("/letter/{$userId}?devices={$devicesEncoded}&tipo_asignacion={$tipoAsignacion}");
+          $devicesEncoded = base64_encode(json_encode($assignedDevices));
+$retiredEncoded = base64_encode(json_encode($retiredDevices));
+
+$linkFirma = url("/letter/{$userId}?devices={$devicesEncoded}&retirados={$retiredEncoded}&tipo_asignacion={$tipoAsignacion}");
 
             $this->brevo->enviarCorreoConLink(
                 $employee->email,
@@ -213,6 +247,8 @@ class CartaController extends Controller
             $userId = $request->input('user_id');
             $tipoAsignacion = $request->input('tipo_asignacion');
             $assignedDevices = $request->input('assigned_devices', []);
+            $retiredDevices = $request->input('retired_devices', []);
+
 
             if (empty($assignedDevices)) {
                 return response()->json(['error' => 'No se recibieron dispositivos.'], 422);
@@ -233,7 +269,9 @@ class CartaController extends Controller
                 'supervisor'       => $employee->supervisor,
                 'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
                 'tipo_asignacion'  => $tipoAsignacion,
-                'assigned_devices' => $assignedDevices
+                'assigned_devices' => $assignedDevices,
+                'retired_devices' => $retiredDevices
+
             ];
 
             $pdf = Pdf::loadView('carta_asignacion', $pdfData);
