@@ -91,4 +91,10 @@ return [
         'redirect' => env('GOOGLE_REDIRECT_URI'), // Redirect URL after authentication
     ],
 
+'brevo' => [
+    'api_key' => env('BREVO_API_KEY'),
+    'from_address' => env('BREVO_FROM_ADDRESS'),
+],
+
+
 ];

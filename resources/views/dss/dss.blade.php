@@ -263,7 +263,7 @@ document.getElementById('userId').addEventListener('blur', function() {
         return;
     }
 
-    let apiUrl = `http://127.0.0.1:8000/getUserById?user_id=${userId}`;
+    let apiUrl = `http://147.182.190.223:8000/getUserById?user_id=${userId}`;
 
     fetch(apiUrl)
         .then(response => {
@@ -331,7 +331,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const assignedDevicesTable = document.getElementById("assignedDevicesTable");
     const retiredDevicesTable = document.getElementById("retiredDevicesTable");
 
-    fetch("http://127.0.0.1:8000/getDeviceList")
+    fetch("http://147.182.190.223:8000/getDeviceList")
         .then(response => response.json())
         .then(data => {
             deviceData = data.devices;
@@ -441,7 +441,7 @@ document.addEventListener("DOMContentLoaded", function () {
      * Fetches the list of available technicians from the API and populates the dropdown.
      */
     function fetchTechnicians() {
-        fetch("http://127.0.0.1:8000/getTechnicianList") // Ensure the API route is correct
+        fetch("http://147.182.190.223:8000/getTechnicianList") // Ensure the API route is correct
             .then(response => {
                 if (!response.ok) {
                     throw new Error("Error al obtener la lista de técnicos."); // ❗ Message displayed to the user in Spanish

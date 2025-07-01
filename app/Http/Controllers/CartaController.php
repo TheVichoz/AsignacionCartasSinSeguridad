@@ -227,7 +227,7 @@ $retiredEncoded = base64_encode(json_encode($retiredDevices));
 
 $linkFirma = url("/letter/{$userId}?devices={$devicesEncoded}&retirados={$retiredEncoded}&tipo_asignacion={$tipoAsignacion}");
 
-            $this->brevo->enviarCorreoConLink(
+            $this->brevo->enviarCorreoParaEmpleado(
                 $employee->email,
                 $employee->display_name,
                 $linkFirma,
@@ -241,54 +241,62 @@ $linkFirma = url("/letter/{$userId}?devices={$devicesEncoded}&retirados={$retire
         }
     }
 
-    public function firmarCarta(Request $request)
-    {
-        try {
-            $userId = $request->input('user_id');
-            $tipoAsignacion = $request->input('tipo_asignacion');
-            $assignedDevices = $request->input('assigned_devices', []);
-            $retiredDevices = $request->input('retired_devices', []);
+public function firmarCarta(Request $request)
+{
+    try {
+        $userId = $request->input('user_id');
+        $tipoAsignacion = $request->input('tipo_asignacion');
+        $assignedDevices = $request->input('assigned_devices', []);
+        $retiredDevices = $request->input('retired_devices', []);
 
-
-            if (empty($assignedDevices)) {
-                return response()->json(['error' => 'No se recibieron dispositivos.'], 422);
-            }
-
-            $employee = EndUser::where('user_id', trim($userId))->first();
-            if (!$employee) {
-                return response()->json(['error' => 'Empleado no encontrado.'], 404);
-            }
-
-            $pdfData = [
-                'nombreUsuario'    => $employee->display_name,
-                'userId'           => $employee->user_id,
-                'email'            => $employee->email,
-                'position'         => $employee->position,
-                'location'         => $employee->location,
-                'costCenter'       => $employee->cost_center_name,
-                'supervisor'       => $employee->supervisor,
-                'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
-                'tipo_asignacion'  => $tipoAsignacion,
-                'assigned_devices' => $assignedDevices,
-                'retired_devices' => $retiredDevices
-
-            ];
-
-            $pdf = Pdf::loadView('carta_asignacion', $pdfData);
-            $fileName = "Carta_Firmada_{$userId}.pdf";
-            $filePath = storage_path("app/public/{$fileName}");
-            $pdf->save($filePath);
-
-            Mail::raw('Tu carta de asignación ha sido firmada exitosamente. Se adjunta el documento.', function ($message) use ($employee, $filePath) {
-                $message->to($employee->email)
-                        ->subject('📄 Carta Firmada')
-                        ->attach($filePath);
-            });
-
-            return response()->json(['message' => 'Carta firmada y enviada al usuario. ✅']);
-        } catch (\Exception $e) {
-            Log::error('❌ Error en firmarCarta:', ['error' => $e->getMessage()]);
-            return response()->json(['error' => $e->getMessage()], 500);
+        if (empty($assignedDevices)) {
+            return response()->json(['error' => 'No se recibieron dispositivos.'], 422);
         }
+
+        $employee = EndUser::where('user_id', trim($userId))->first();
+        if (!$employee) {
+            return response()->json(['error' => 'Empleado no encontrado.'], 404);
+        }
+
+        $pdfData = [
+            'nombreUsuario'    => $employee->display_name,
+            'userId'           => $employee->user_id,
+            'email'            => $employee->email,
+            'position'         => $employee->position,
+            'location'         => $employee->location,
+            'costCenter'       => $employee->cost_center_name,
+            'supervisor'       => $employee->supervisor,
+            'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
+            'tipo_asignacion'  => $tipoAsignacion,
+            'assigned_devices' => $assignedDevices,
+            'retired_devices'  => $retiredDevices
+        ];
+
+        $pdf = \Pdf::loadView('carta_asignacion', $pdfData);
+        $fileName = "Carta_Firmada_{$userId}.pdf";
+        $filePath = storage_path("app/public/{$fileName}");
+        $pdf->save($filePath);
+
+        // Nuevo cuerpo del correo
+        $body = "
+            <p>Hola {$employee->display_name},</p>
+            <p>Tu carta de asignación ha sido firmada exitosamente. Se adjunta el documento PDF.</p>
+        ";
+
+        // Usar BrevoMailer para enviar el correo con API
+        $this->brevo->enviarCorreoConAdjunto(
+            $employee->email,
+            $employee->display_name,
+            '📄 Carta Firmada',
+            $body,
+            $filePath
+        );
+
+        return response()->json(['message' => 'Carta firmada y enviada al usuario. ✅']);
+    } catch (\Exception $e) {
+        \Log::error('❌ Error en firmarCarta:', ['error' => $e->getMessage()]);
+        return response()->json(['error' => $e->getMessage()], 500);
     }
+}
+
 }
