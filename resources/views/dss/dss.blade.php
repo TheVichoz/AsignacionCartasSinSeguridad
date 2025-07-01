@@ -171,44 +171,28 @@
                     </select>
                 </div>
 
-	<h4 class="fw-bold">Dispositivo</h4>
-<div class="form-group">
+<h4 class="fw-bold">Dispositivo</h4>
+<div class="input-group mb-3">
     <input type="text" class="form-control" id="serialInput" placeholder="Ej: SN123456789">
+    <button type="button" id="assignDeviceBtn" class="btn btn-primary">
+        Asignar Dispositivo
+    </button>
 </div>
 
 
-                <h4 class="fw-bold">Tipo de Asignación</h4>
-                <div class="form-group">
-                    <select class="form-select" id="asignacion">
-                        <option selected>Seleccione un tipo de asignación</option>
-                    </select>
-                </div>
+
+<h4 class="fw-bold">Tipo de Asignación</h4>
+<div class="form-group">
+    <select class="form-select" id="asignacion">
+        <option selected>Seleccione un tipo de asignación</option>
+    </select>
+</div>
+
+
 
 
                 <!-- Table of assigned devices -->
                 <h4 class="fw-bold">Lista de Dispositivos Asignados</h4>
-                <table class="table table-bordered">
-<thead>
-    <tr>
-        <th class="fw-bold">Descripción Dispositivo</th>
-        <th class="fw-bold">Asset Tag</th>
-        <th class="fw-bold">Número de Serie</th>
-        <th class="fw-bold">Accesorio</th>
-        <th class="fw-bold">Folio Accesorio</th>
-    </tr>
-</thead>
-
-    <tbody id="assignedDevicesTable">
-        
-    </tbody>
-</table>
-<h4 class="fw-bold mt-4">Retirar Dispositivo</h4>
-<div class="form-group">
-    <input type="text" class="form-control" id="serialInputRetiro" placeholder="Ej: SN987654321">
-</div>
-
-
-<h4 class="fw-bold">Lista de Dispositivos Retirados</h4>
 <table class="table table-bordered">
 <thead>
     <tr>
@@ -216,12 +200,38 @@
         <th class="fw-bold">Asset Tag</th>
         <th class="fw-bold">Número de Serie</th>
         <th class="fw-bold">Accesorio</th>
-        <th class="fw-bold">Folio Accesorio</th>
     </tr>
 </thead>
-
-    <tbody id="retiredDevicesTable"></tbody>
+<tbody id="assignedDevicesTable"></tbody>
 </table>
+
+
+    <tbody id="assignedDevicesTable">
+        
+    </tbody>
+</table>
+<h4 class="fw-bold mt-4">Retirar Dispositivo</h4>
+<div class="input-group mb-3">
+    <input type="text" class="form-control" id="serialInputRetiro" placeholder="Ej: SN987654321">
+    <button type="button" id="retirarDeviceBtn" class="btn btn-warning">
+        Retirar Dispositivo
+    </button>
+</div>
+
+
+
+<table class="table table-bordered">
+<thead>
+    <tr>
+        <th class="fw-bold">Descripción Dispositivo</th>
+        <th class="fw-bold">Asset Tag</th>
+        <th class="fw-bold">Número de Serie</th>
+        <th class="fw-bold">Accesorio</th>
+    </tr>
+</thead>
+<tbody id="retiredDevicesTable"></tbody>
+</table>
+
 
 
                 <!-- Submit button -->
@@ -232,11 +242,7 @@
         Generar carta de asignación
     </button>
 </div>
-<!-- Botones alineados -->
-<div class="d-flex justify-content-center gap-3 my-3">
-    <button type="button" id="assignDeviceBtn" class="btn btn-primary">Asignar Dispositivo</button>
-    <button type="button" id="retirarDeviceBtn" class="btn btn-warning">Retirar Dispositivo</button>
-</div>
+
 
 <div id="alertSuccess" class="alert alert-success mt-2 d-none"></div>
             </form>
@@ -351,18 +357,17 @@ document.addEventListener("DOMContentLoaded", function () {
         if (assignedDevicesList.some(d => d.serial_number === serial))
             return alert("Ya agregado.");
 
-        const row = assignedDevicesTable.insertRow();
-        row.insertCell(0).innerText = `${selectedDevice.brand} ${selectedDevice.model}`;
+const row = assignedDevicesTable.insertRow();
+row.insertCell(0).innerText = `${selectedDevice.brand} ${selectedDevice.model}`;
 
-        const assetInput = crearInput(selectedDevice.asset_tag);
-        row.insertCell(1).appendChild(assetInput);
+const assetInput = crearInput(selectedDevice.asset_tag);
+row.insertCell(1).appendChild(assetInput);
 
-        row.insertCell(2).innerText = serial;
+row.insertCell(2).innerText = serial;
 
-        const accInput = crearInput("");
-        const folioInput = crearInput("");
-        row.insertCell(3).appendChild(accInput);
-        row.insertCell(4).appendChild(folioInput);
+const accInput = crearInput("");
+row.insertCell(3).appendChild(accInput);
+
 
         assignedDevicesList.push({
             display_name: `${selectedDevice.brand} ${selectedDevice.model}`,
@@ -391,18 +396,17 @@ document.addEventListener("DOMContentLoaded", function () {
         if (retiredDevicesList.some(d => d.serial_number === serial))
             return alert("Ya marcado para retiro.");
 
-        const row = retiredDevicesTable.insertRow();
-        row.insertCell(0).innerText = `${selectedDevice.brand} ${selectedDevice.model}`;
+ const row = retiredDevicesTable.insertRow();
+row.insertCell(0).innerText = `${selectedDevice.brand} ${selectedDevice.model}`;
 
-        const assetInput = crearInput(selectedDevice.asset_tag);
-        row.insertCell(1).appendChild(assetInput);
+const assetInput = crearInput(selectedDevice.asset_tag);
+row.insertCell(1).appendChild(assetInput);
 
-        row.insertCell(2).innerText = serial;
+row.insertCell(2).innerText = serial;
 
-        const accInput = crearInput("");
-        const folioInput = crearInput("");
-        row.insertCell(3).appendChild(accInput);
-        row.insertCell(4).appendChild(folioInput);
+const accInput = crearInput("");
+row.insertCell(3).appendChild(accInput);
+
 
         retiredDevicesList.push({
             display_name: `${selectedDevice.brand} ${selectedDevice.model}`,
