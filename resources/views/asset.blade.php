@@ -86,23 +86,22 @@
         <h6>Dispositivo #{{ $index + 1 }}</h6>
         <table>
 <thead>
-    <tr>
-        <th>Descripción</th>
-        <th>Asset Tag</th>
-        <th>Número de Serie</th>
-        <th>Accesorio</th>
-        <th>Folio Accesorio</th>
-    </tr>
+<tr>
+    <th>Descripción</th>
+    <th>Asset Tag</th>
+    <th>Número de Serie</th>
+    <th>Accesorio</th>
+</tr>
 </thead>
 <tbody>
-    <tr>
-        <td>{{ $device['display_name'] ?? 'N/A' }}</td>
-        <td>{{ $device['asset_tag'] ?? 'N/A' }}</td>
-        <td>{{ $device['serial_number'] ?? 'N/A' }}</td>
-        <td>{{ $device['accesorio'] ?? 'N/A' }}</td>
-        <td>{{ $device['folio_accesorio'] ?? 'N/A' }}</td>
-    </tr>
+<tr>
+    <td>{{ $device['display_name'] ?? 'N/A' }}</td>
+    <td>{{ $device['asset_tag'] ?? 'N/A' }}</td>
+    <td>{{ $device['serial_number'] ?? 'N/A' }}</td>
+    <td>{{ $device['accesorio'] ?? 'N/A' }}</td>
+</tr>
 </tbody>
+
 
         </table>
     @endforeach
@@ -112,23 +111,22 @@
         <h6>Dispositivo Retirado #{{ $index + 1 }}</h6>
         <table>
 <thead>
-    <tr>
-        <th>Descripción</th>
-        <th>Asset Tag</th>
-        <th>Número de Serie</th>
-        <th>Accesorio</th>
-        <th>Folio Accesorio</th>
-    </tr>
+<tr>
+    <th>Descripción</th>
+    <th>Asset Tag</th>
+    <th>Número de Serie</th>
+    <th>Accesorio</th>
+</tr>
 </thead>
 <tbody>
-    <tr>
-        <td>{{ $device['display_name'] ?? 'N/A' }}</td>
-        <td>{{ $device['asset_tag'] ?? 'N/A' }}</td>
-        <td>{{ $device['serial_number'] ?? 'N/A' }}</td>
-        <td>{{ $device['accesorio'] ?? 'N/A' }}</td>
-        <td>{{ $device['folio_accesorio'] ?? 'N/A' }}</td>
-    </tr>
+<tr>
+    <td>{{ $device['display_name'] ?? 'N/A' }}</td>
+    <td>{{ $device['asset_tag'] ?? 'N/A' }}</td>
+    <td>{{ $device['serial_number'] ?? 'N/A' }}</td>
+    <td>{{ $device['accesorio'] ?? 'N/A' }}</td>
+</tr>
 </tbody>
+
 
         </table>
     @endforeach
