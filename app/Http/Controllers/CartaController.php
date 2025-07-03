@@ -115,9 +115,9 @@ public function mostrarCarta(Request $request, $user_id)
 {
     try {
         $tipoAsignacion = $request->input('tipo_asignacion', 'Asignación Regular');
-        $folio = $request->query('folio', 'SIN-FOLIO'); // 🟢 Aquí tomas el folio desde la URL y NO lo vuelves a generar
+        $folio = $request->query('folio', 'SIN-FOLIO');
 
-        // DECODIFICAR dispositivos asignados
+        // Decodificar dispositivos
         $encodedDevices = $request->query('devices') ?? $request->query('dispositivos');
         $assignedDevices = [];
         if ($encodedDevices) {
@@ -128,7 +128,6 @@ public function mostrarCarta(Request $request, $user_id)
             }
         }
 
-        // DECODIFICAR dispositivos retirados
         $retiredDevices = [];
         $encodedRetirados = $request->query('retirados');
         if ($encodedRetirados) {
@@ -144,7 +143,6 @@ public function mostrarCarta(Request $request, $user_id)
             throw new \Exception('Empleado no encontrado.');
         }
 
-        // Leer imágenes en base64
         $logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirlpoollogo2.jpg')));
         $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
 
@@ -162,13 +160,14 @@ public function mostrarCarta(Request $request, $user_id)
             'retired_devices'  => $retiredDevices,
             'logoWhirlpool'    => $logoWhirlpool,
             'logoGtim'         => $logoGtim,
-            'folio'            => $folio // ✅ Solo se usa el que viene en la URL
+            'folio'            => $folio
         ]);
     } catch (\Exception $e) {
         Log::error('❌ Error al mostrar la carta:', ['error' => $e->getMessage()]);
         return response()->json(['error' => $e->getMessage()], 500);
     }
 }
+
 
 
 public function vistaParaAsset($user_id, Request $request)
@@ -259,8 +258,8 @@ public function aprobarDesdeAsset(Request $request)
 
         $devicesEncoded = base64_encode(json_encode($assignedDevices));
         $retiredEncoded = base64_encode(json_encode($retiredDevices));
-
-        $linkFirma = url("/letter/{$userId}?devices={$devicesEncoded}&retirados={$retiredEncoded}&tipo_asignacion={$tipoAsignacion}&folio={$folio}");
+$folioGenerado = $this->generarFolio();
+$linkFirma = url("/letter/{$userId}?devices={$devicesEncoded}&retirados={$retiredEncoded}&tipo_asignacion={$tipoAsignacion}&folio={$folioGenerado}");
 
         $this->brevo->enviarCorreoParaEmpleado(
             $employee->email,
@@ -281,9 +280,9 @@ public function firmarCarta(Request $request)
     try {
         $userId = $request->input('user_id');
         $tipoAsignacion = $request->input('tipo_asignacion');
-        $folio = $request->input('folio', 'SIN-FOLIO'); // 🟢 Recibe el folio enviado en el link
         $assignedDevices = $request->input('assigned_devices', []);
         $retiredDevices = $request->input('retired_devices', []);
+        $folio = $request->input('folio', 'SIN-FOLIO'); // ✅ aquí
 
         if (empty($assignedDevices)) {
             return response()->json(['error' => 'No se recibieron dispositivos.'], 422);
@@ -294,7 +293,6 @@ public function firmarCarta(Request $request)
             return response()->json(['error' => 'Empleado no encontrado.'], 404);
         }
 
-        // Logos
         $logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirlpoollogo2.jpg')));
         $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
 
@@ -312,7 +310,7 @@ public function firmarCarta(Request $request)
             'retired_devices'  => $retiredDevices,
             'logoWhirlpool'    => $logoWhirlpool,
             'logoGtim'         => $logoGtim,
-            'folio'            => $folio // 🟢 El mismo folio
+            'folio'            => $folio // ✅ aquí
         ];
 
         $pdf = \Pdf::loadView('carta_asignacion', $pdfData)
@@ -321,7 +319,6 @@ public function firmarCarta(Request $request)
         $filePath = storage_path("app/public/{$fileName}");
         $pdf->save($filePath);
 
-        // Correo
         $body = "
             <p>Hola {$employee->display_name},</p>
             <p>Tu carta de asignación ha sido firmada exitosamente. Se adjunta el documento PDF.</p>
@@ -341,6 +338,7 @@ public function firmarCarta(Request $request)
         return response()->json(['error' => $e->getMessage()], 500);
     }
 }
+
 
 private function generarFolio()
 {
