@@ -89,16 +89,15 @@
     </style>
 </head>
 <body>
-    <table width="100%" style="margin-bottom:10px;">
-    <tr>
-        <td align="left">
-            <img src="data:image/jpeg;base64,{{ $logoWhirlpool }}" style="height:100px;">
-        </td>
-        <td align="right">
-            <img src="data:image/jpeg;base64,{{ $logoGtim }}" style="height:50px;">
-        </td>
-    </tr>
-</table>
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+    <div style="display:flex; align-items:center;">
+        <img src="data:image/jpeg;base64,{{ $logoWhirlpool }}" style="height:60px; margin-right:10px;">
+    </div>
+    <div style="display:flex; align-items:center;">
+        <img src="data:image/jpeg;base64,{{ $logoGtim }}" style="height:60px;">
+    </div>
+</div>
+
 
 
 <div class="container">
