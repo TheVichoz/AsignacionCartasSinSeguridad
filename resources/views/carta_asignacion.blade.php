@@ -2,231 +2,128 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Carta de Asignación de Equipo</title>
+    <title>Firma de Aceptación de Dispositivo Tecnológico</title>
     <style>
-        /*
-         * Global styles for the PDF layout:
-         * - Clean and professional appearance
-         * - Highlight section, tables, and signature format
-        */
-body {
-    font-family: Arial, sans-serif;
-    font-size: 14px;
-    margin: 10px; /* margen reducido */
-    padding: 0;   /* sin padding extra */
-    line-height: 1.6;
-    background-color: #f9f9f9;
-}
-
-
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            margin: 20px;
+            padding: 0;
+            line-height: 1.6;
+            background-color: white;
+            color: #000;
+        }
         .header {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 3px solid #003366;
-            padding-bottom: 10px;
-            margin-bottom: 20px;
             font-size: 12px;
+            text-align: right;
+            margin-bottom: 10px;
             color: #666;
         }
-
         h2 {
-            color: #003366;
-            text-align: center;
-            margin-bottom: 10px;
-        }
-
-        .highlight {
-            background-color: #ffcc00;
-            padding: 8px;
-            font-weight: bold;
-            text-align: center;
-            border-radius: 5px;
-            display: inline-block;
-            margin: 20px 0;
-        }
-
-        .info-table, .device-table {
-            width: 100%;
-            border-collapse: collapse;
-            background-color: white;
-            margin-bottom: 20px;
-        }
-
-        .info-table th, .info-table td,
-        .device-table th, .device-table td {
-            border: 1px solid #ddd;
-            padding: 10px;
             text-align: left;
-        }
-
-        .info-table th, .device-table th {
-            background-color: #003366;
-            color: white;
-            text-transform: uppercase;
-        }
-
-        h4 {
-            color: #003366;
+            font-size: 20px;
             margin-bottom: 5px;
         }
-
-        .terms {
-            font-size: 13px;
-            text-align: justify;
-            margin-top: 20px;
+        .section {
+            margin-bottom: 20px;
         }
-
-        .signature-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 30px;
+        .section-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
         }
-
-        .signature-table th, .signature-table td {
+        .data-row {
+            margin-bottom: 4px;
+        }
+        .signature-block {
             border: 1px solid #000;
             padding: 10px;
-            text-align: center;
-        }
-
-        .signature-table th {
-            background-color: #f4f4f4;
-        }
-
-        .footer {
             margin-top: 30px;
+        }
+        .signature-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .small-text {
             font-size: 12px;
-            text-align: center;
             color: #555;
         }
-        .contenido-carta {
-    width: 95%;
-    margin: 0 auto;
-    padding: 20px;
-    background-color: white;
-    border: 1px solid #ddd;
-    box-sizing: border-box;
-}
-
+        a {
+            color: #003366;
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
-    <div class="contenido-carta">
 
-
-    <!-- Header section: displays current timestamp for document traceability -->
     <div class="header">
-        <div>&nbsp;</div>
-        <div>{{ \Carbon\Carbon::now()->format('D M d Y H:i:s T') }}</div>
+        {{ \Carbon\Carbon::now()->format('D M d Y H:i:s T') }}
     </div>
 
-    <h2>Carta de Asignación de Equipo</h2>
+    <h2>Firma de aceptación de la asignación de Dispositivo Tecnológico</h2>
 
-    <!-- Visual highlight for drawing attention to important policy notice -->
-    <div class="highlight">
-        Leer detenidamente - <i>Política de uso de dispositivos tecnológicos.</i>
+    <div class="section">
+        <div class="section-title">Datos del Usuario</div>
+        <div class="data-row">Nombre Completo: {{ $nombreUsuario }}</div>
+        <div class="data-row">User ID: {{ $userId }}</div>
+        <div class="data-row">Email: {{ $email }}</div>
+        <div class="data-row">Puesto: {{ $position }}</div>
+        <div class="data-row">Ubicación: {{ $location }}</div>
+        <div class="data-row">Centro de Costo: {{ $costCenter }}</div>
+        <div class="data-row">Supervisor: {{ $supervisor }}</div>
     </div>
 
-    <!-- User information table. Filled dynamically from controller-provided variables -->
-    <table class="info-table">
-        <tr><th>Nombre</th><td>{{ $nombreUsuario }}</td></tr>
-        <tr><th>User ID</th><td>{{ $userId }}</td></tr>
-        <tr><th>Email</th><td>{{ $email }}</td></tr>
-        <tr><th>Puesto</th><td>{{ $position }}</td></tr>
-        <tr><th>Ubicación</th><td>{{ $location }}</td></tr>
-        <tr><th>Centro de Costo</th><td>{{ $costCenter }}</td></tr>
-        <tr><th>Supervisor</th><td>{{ $supervisor }}</td></tr>
-        <tr><th>Fecha Aceptación</th><td>{{ $fechaAceptacion }}</td></tr>
-    </table>
+    <div class="section">
+        <div class="section-title">Datos de los Dispositivos Tecnológicos</div>
+        @foreach ($assigned_devices as $index => $device)
+            <div class="data-row">
+                Equipo entregado #{{ $index + 1 }}:
+                {{ $device['display_name'] ?? 'N/A' }},
+                Asset Tag: {{ $device['asset_tag'] ?? 'N/A' }},
+                Número de Serie: {{ $device['serial_number'] ?? 'N/A' }},
+                Accesorio: {{ $device['accesorio'] ?? 'N/A' }}
+            </div>
+        @endforeach
 
-    <h3 style="color:#003366;">Lista de Dispositivos Asignados</h3>
+        @if (!empty($retired_devices))
+            @foreach ($retired_devices as $index => $device)
+                <div class="data-row">
+                    Equipo retirado #{{ $index + 1 }}:
+                    {{ $device['display_name'] ?? 'N/A' }},
+                    Asset Tag: {{ $device['asset_tag'] ?? 'N/A' }},
+                    Número de Serie: {{ $device['serial_number'] ?? 'N/A' }},
+                    Accesorio: {{ $device['accesorio'] ?? 'N/A' }}
+                </div>
+            @endforeach
+        @endif
+    </div>
 
-    <!-- Loop through the assigned devices array to show each one in a table -->
-    @foreach ($assigned_devices as $index => $device)
-        <h4>Dispositivo #{{ $index + 1 }}</h4>
-        <table class="device-table">
-<thead>
-<tr>
-    <th>Descripción</th>
-    <th>Asset Tag</th>
-    <th>Número de Serie</th>
-    <th>Accesorio</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-    <td>{{ $device['display_name'] ?? 'N/A' }}</td>
-    <td>{{ $device['asset_tag'] ?? 'N/A' }}</td>
-    <td>{{ $device['serial_number'] ?? 'N/A' }}</td>
-    <td>{{ $device['accesorio'] ?? 'N/A' }}</td>
-</tr>
-</tbody>
-
-
-        </table>
-    @endforeach
-
-    @if (!empty($retired_devices))
-    <h3 style="color:#003366;">Lista de Dispositivos Retirados</h3>
-
-    @foreach ($retired_devices as $index => $device)
-        <h4>Dispositivo Retirado #{{ $index + 1 }}</h4>
-        <table class="device-table">
-<thead>
-<tr>
-    <th>Descripción</th>
-    <th>Asset Tag</th>
-    <th>Número de Serie</th>
-    <th>Accesorio</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-    <td>{{ $device['display_name'] ?? 'N/A' }}</td>
-    <td>{{ $device['asset_tag'] ?? 'N/A' }}</td>
-    <td>{{ $device['serial_number'] ?? 'N/A' }}</td>
-    <td>{{ $device['accesorio'] ?? 'N/A' }}</td>
-</tr>
-</tbody>
-
-
-        </table>
-    @endforeach
-@endif
-
-    <!-- Declaration and acknowledgment section regarding device usage policy -->
-    <p class="terms">
-        Por medio de la presente declaro que he recibido los dispositivos tecnológicos antes mencionados,
+    <div class="section">
+        Por medio de la presente declaro que he recibido el(los) dispositivo(s) tecnológico(s) antes mencionado(s),
         los cuales se me han asignado para el desempeño de mis funciones.<br><br>
-        Asumo la responsabilidad de su guarda y cuidado, y me comprometo a cumplir con
-        la <b>Política de uso de Dispositivos Tecnológicos</b> definida por la empresa.
-    </p>
+        Asumo la responsabilidad de su guarda y cuidado, y me comprometo a cumplir con la
+        <b>Política de uso de Dispositivos Tecnológicos</b> definida por la empresa.
+    </div>
 
-    <!-- Link to the official policy document stored on Google Drive -->
-    <p>
+    <div class="section">
         <b>Política de uso de Dispositivos Tecnológicos:</b><br>
         <a href="https://drive.google.com/open?id=1ns1BJsclUz1vrURq5zEoMuI0-MKR6a6Lq">
             https://drive.google.com/open?id=1ns1BJsclUz1vrURq5zEoMuI0-MKR6a6Lq
         </a>
-    </p>
-
-    <!-- Signature confirmation section -->
-    <table class="signature-table">
-        <tr>
-            <th>Nombre</th>
-            <th>Aceptación</th>
-            <th>Fecha</th>
-        </tr>
-        <tr>
-            <td>{{ $nombreUsuario }}: {{ $email }}</td>
-            <td>Estoy de acuerdo</td>
-            <td>{{ $fechaAceptacion }}</td>
-        </tr>
-        <tr>
-            <td colspan="2">Nombre y firma de quien firma de aceptación:</td>
-            <td>Fecha de aceptación:</td>
-        </tr>
-    </table>
-
     </div>
+
+    <div class="signature-block">
+        <div class="signature-row">
+            <div>{{ $nombreUsuario }} : {{ $email }}</div>
+            <div>Estoy de acuerdo</div>
+            <div>{{ $fechaAceptacion }}</div>
+        </div>
+        <div class="signature-row">
+            <div>Nombre y firma de quien firma de aceptación</div>
+            <div>Fecha de aceptación</div>
+        </div>
+    </div>
+
 </body>
 </html>
