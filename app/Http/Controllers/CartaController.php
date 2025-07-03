@@ -240,7 +240,7 @@ public function aprobarDesdeAsset(Request $request)
     try {
         $userId = $request->input('user_id');
         $tipoAsignacion = $request->input('tipo_asignacion');
-        $folio = $request->input('folio', 'SIN-FOLIO'); // ✅ Usar el folio recibido
+        $folio = $request->input('folio', 'SIN-FOLIO');
 
         $assignedDevices = $request->input('assigned_devices', []);
         $retiredDevices = $request->input('retired_devices', []);
@@ -259,7 +259,7 @@ public function aprobarDesdeAsset(Request $request)
         $devicesEncoded = base64_encode(json_encode($assignedDevices));
         $retiredEncoded = base64_encode(json_encode($retiredDevices));
 
-        // ✅ Pasar el MISMO folio al enlace de firma
+        // OJO: folio está en el enlace
         $linkFirma = url("/letter/{$userId}?devices={$devicesEncoded}&retirados={$retiredEncoded}&tipo_asignacion={$tipoAsignacion}&folio={$folio}");
 
         $this->brevo->enviarCorreoParaEmpleado(
