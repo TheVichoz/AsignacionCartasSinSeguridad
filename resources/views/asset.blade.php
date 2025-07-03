@@ -61,15 +61,16 @@
     </style>
 </head>
 <body>
-<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-    <div style="display:flex; align-items:center;">
-        <img src="data:image/jpeg;base64,{{ $logoWhirlpool }}" style="height:100px; margin-right:10px;">
-    </div>
-    <div style="display:flex; align-items:center;">
-        <img src="data:image/jpeg;base64,{{ $logoGtim }}" style="height:60px;">
-    </div>
-</div>
-
+    <table width="100%" style="margin-bottom:10px;">
+    <tr>
+        <td align="left">
+            <img src="data:image/jpeg;base64,{{ $logoWhirlpool }}" style="height:100px;">
+        </td>
+        <td align="right">
+            <img src="data:image/jpeg;base64,{{ $logoGtim }}" style="height:50px;">
+        </td>
+    </tr>
+</table>
 
 <div class="container">
 
@@ -145,50 +146,52 @@
 @endif
 
     <!-- Checkbox y botón de autorización -->
-<form id="assetApprovalForm">
+    <form id="assetApprovalForm">
     @csrf
     <input type="hidden" name="user_id" value="{{ $userId }}">
     <input type="hidden" name="folio" value="{{ $folio }}">
 
-    <div class="form-check">
-        <input type="checkbox" class="form-check-input" id="approveCheck" required>
-        <label class="form-check-label" for="approveCheck">He revisado y autorizo esta carta.</label>
-    </div>
-    <button type="submit" class="btn btn-primary mt-3" id="submitBtn" disabled>Autorizar Carta</button>
-</form>
-
+        <div class="form-check">
+            <input type="checkbox" class="form-check-input" id="approveCheck" required>
+            <label class="form-check-label" for="approveCheck">He revisado y autorizo esta carta.</label>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3" id="submitBtn" disabled>Autorizar Carta</button>
+    </form>
 </div>
 
 <script>
- document.getElementById("assetApprovalForm").addEventListener("submit", function (event) {
-    event.preventDefault();
-
-    const folioValue = document.querySelector('input[name="folio"]').value;
-
-    fetch("{{ route('asset.aprobar') }}", {
-        method: 'POST',
-        headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            user_id: "{{ $userId }}",
-            assigned_devices: @json($assigned_devices),
-            retired_devices: @json($retired_devices),
-            tipo_asignacion: "{{ $tipo_asignacion ?? 'Asignación Regular' }}",
-            folio: folioValue
-        })
-    })
-    .then(response => response.json())
-    .then(data => {
-        alert(data.message || "✅ Carta autorizada correctamente.");
-        location.reload();
-    })
-    .catch(error => {
-        alert("❌ Error: " + error.message);
+    document.getElementById("approveCheck").addEventListener("change", function () {
+        document.getElementById("submitBtn").disabled = !this.checked;
     });
-});
 
+    document.getElementById("assetApprovalForm").addEventListener("submit", function (event) {
+        event.preventDefault();
+
+        const folioValue = document.querySelector('input[name="folio"]').value;
+
+        fetch("{{ route('asset.aprobar') }}", {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                user_id: "{{ $userId }}",
+                assigned_devices: @json($assigned_devices),
+                retired_devices: @json($retired_devices),
+                tipo_asignacion: "{{ $tipo_asignacion ?? 'Asignación Regular' }}",
+                folio: folioValue
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            alert(data.message || "✅ Carta autorizada correctamente.");
+            location.reload(); // o redirigir si quieres
+        })
+        .catch(error => {
+            alert("❌ Error: " + error.message);
+        });
+    });
 </script>
 
 </body>

@@ -240,7 +240,8 @@ public function aprobarDesdeAsset(Request $request)
     try {
         $userId = $request->input('user_id');
         $tipoAsignacion = $request->input('tipo_asignacion');
-        $folio = $request->input('folio', 'SIN-FOLIO');
+        $folio = $request->json('folio', 'SIN-FOLIO');
+
 
         $assignedDevices = $request->input('assigned_devices', []);
         $retiredDevices = $request->input('retired_devices', []);
