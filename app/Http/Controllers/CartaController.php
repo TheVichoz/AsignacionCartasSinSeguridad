@@ -137,10 +137,10 @@ public function mostrarCarta(Request $request, $user_id)
         if (!$employee) {
             throw new \Exception('Empleado no encontrado.');
         }
-        // Leer imágenes en base64
-$logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirlpoollogo2.jpg')));
-$logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
 
+        // Leer imágenes en base64
+        $logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirlpoollogo2.jpg')));
+        $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
 
         return view('letter', [
             'nombreUsuario'    => $employee->display_name,
@@ -153,7 +153,9 @@ $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
             'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
             'tipo_asignacion'  => $tipoAsignacion,
             'assigned_devices' => $assignedDevices,
-            'retired_devices'  => $retiredDevices
+            'retired_devices'  => $retiredDevices,
+            'logoWhirlpool'    => $logoWhirlpool,   // 🔵 Añadido
+            'logoGtim'         => $logoGtim         // 🔵 Añadido
         ]);
     } catch (\Exception $e) {
         Log::error('❌ Error al mostrar la carta:', ['error' => $e->getMessage()]);
@@ -161,57 +163,62 @@ $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
     }
 }
 
-    public function vistaParaAsset($user_id, Request $request)
-    {
-        try {
-            $user_id = trim($user_id);
-            Log::info('🔍 vistaParaAsset - user_id recibido:', [$user_id]);
+public function vistaParaAsset($user_id, Request $request)
+{
+    try {
+        $user_id = trim($user_id);
+        Log::info('🔍 vistaParaAsset - user_id recibido:', [$user_id]);
 
-            $tipoAsignacion = $request->input('tipo_asignacion', 'Asignación Regular');
-            $encodedDevices = $request->query('devices') ?? $request->query('dispositivos');
-            $assignedDevices = [];
+        $tipoAsignacion = $request->input('tipo_asignacion', 'Asignación Regular');
+        $encodedDevices = $request->query('devices') ?? $request->query('dispositivos');
+        $assignedDevices = [];
 
-            if ($encodedDevices) {
-                $json = base64_decode($encodedDevices);
-                $decoded = json_decode($json, true);
-                if (json_last_error() === JSON_ERROR_NONE) {
-                    $assignedDevices = $decoded;
-                }
+        if ($encodedDevices) {
+            $json = base64_decode($encodedDevices);
+            $decoded = json_decode($json, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $assignedDevices = $decoded;
             }
-            $encodedRetirados = $request->query('retirados');
+        }
+        $encodedRetirados = $request->query('retirados');
 
-if ($encodedRetirados) {
-    $json = base64_decode($encodedRetirados);
-    $decoded = json_decode($json, true);
-    if (json_last_error() === JSON_ERROR_NONE) {
-        $retiredDevices = $decoded;
+        if ($encodedRetirados) {
+            $json = base64_decode($encodedRetirados);
+            $decoded = json_decode($json, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $retiredDevices = $decoded;
+            }
+        }
+
+        $employee = EndUser::where('user_id', $user_id)->first();
+        if (!$employee) {
+            throw new \Exception('Empleado no encontrado.');
+        }
+
+        // Leer imágenes en base64
+        $logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirlpoollogo2.jpg')));
+        $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
+
+        return view('asset', [
+            'nombreUsuario'    => $employee->display_name,
+            'userId'           => $employee->user_id,
+            'email'            => $employee->email,
+            'position'         => $employee->position,
+            'location'         => $employee->location,
+            'costCenter'       => $employee->cost_center_name,
+            'supervisor'       => $employee->supervisor,
+            'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
+            'tipo_asignacion'  => $tipoAsignacion,
+            'assigned_devices' => $assignedDevices,
+            'retired_devices'  => $retiredDevices,
+            'logoWhirlpool'    => $logoWhirlpool,
+            'logoGtim'         => $logoGtim
+        ]);
+    } catch (\Exception $e) {
+        Log::error('❌ Error en vistaParaAsset:', ['error' => $e->getMessage()]);
+        return response()->json(['error' => $e->getMessage()], 500);
     }
 }
-
-
-            $employee = EndUser::where('user_id', $user_id)->first();
-            if (!$employee) {
-                throw new \Exception('Empleado no encontrado.');
-            }
-
-            return view('asset', [
-                'nombreUsuario'    => $employee->display_name,
-                'userId'           => $employee->user_id,
-                'email'            => $employee->email,
-                'position'         => $employee->position,
-                'location'         => $employee->location,
-                'costCenter'       => $employee->cost_center_name,
-                'supervisor'       => $employee->supervisor,
-                'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
-                'tipo_asignacion'  => $tipoAsignacion,
-                'assigned_devices' => $assignedDevices,
-                    'retired_devices'  => $retiredDevices
-            ]);
-        } catch (\Exception $e) {
-            Log::error('❌ Error en vistaParaAsset:', ['error' => $e->getMessage()]);
-            return response()->json(['error' => $e->getMessage()], 500);
-        }
-    }
 
     public function aprobarDesdeAsset(Request $request)
     {

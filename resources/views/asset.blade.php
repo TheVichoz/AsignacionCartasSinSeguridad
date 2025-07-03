@@ -61,6 +61,17 @@
     </style>
 </head>
 <body>
+    <table width="100%" style="margin-bottom:10px;">
+    <tr>
+        <td align="left">
+            <img src="data:image/jpeg;base64,{{ $logoWhirlpool }}" style="height:100px;">
+        </td>
+        <td align="right">
+            <img src="data:image/jpeg;base64,{{ $logoGtim }}" style="height:50px;">
+        </td>
+    </tr>
+</table>
+
 <div class="container">
 
     <h2>Revisión y Aprobación de Carta</h2>
