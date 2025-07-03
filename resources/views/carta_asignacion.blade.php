@@ -114,13 +114,14 @@ body {
 <table width="100%" style="margin-bottom:10px;">
     <tr>
         <td align="left">
-            <img src="data:image/jpeg;base64,{{ $logoWhirlpool }}" style="height:50px;">
+            <img src="data:image/jpeg;base64,{{ $logoWhirlpool }}" style="height:70px;">
         </td>
         <td align="right">
             <img src="data:image/jpeg;base64,{{ $logoGtim }}" style="height:50px;">
         </td>
     </tr>
 </table>
+
 
 
 
