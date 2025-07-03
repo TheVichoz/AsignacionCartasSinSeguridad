@@ -111,10 +111,11 @@ body {
     </style>
 </head>
 <body>
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-    <img src="{{ public_path('whirlpoollogo2.jpg') }}" style="height:40px;">
-    <img src="{{ public_path('gtimlogo.jpg') }}" style="height:40px;">
+<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <img src="data:image/jpeg;base64,{{ $logoWhirlpool }}" style="height:40px;">
+    <img src="data:image/jpeg;base64,{{ $logoGtim }}" style="height:40px;">
 </div>
+
 
     <div class="contenido-carta">
 

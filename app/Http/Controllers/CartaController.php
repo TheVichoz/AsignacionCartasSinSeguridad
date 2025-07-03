@@ -73,6 +73,9 @@ $url = url("/asset/autorizar/{$userId}?devices={$devicesEncoded}&retirados={$ret
             if (!$employee) {
                 throw new \Exception('❌ Empleado no encontrado.');
             }
+            // Leer imágenes en base64
+$logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirllogoo2.jpg')));
+$logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
 
             $pdfData = [
                 'nombreUsuario'    => $employee->display_name,
@@ -85,7 +88,9 @@ $url = url("/asset/autorizar/{$userId}?devices={$devicesEncoded}&retirados={$ret
                 'fechaAceptacion'  => Carbon::now()->format('d/m/Y H:i:s'),
                 'tipo_asignacion'  => $tipoAsignacion,
                 'assigned_devices' => $assignedDevices,
-                'retired_devices' => $retiredDevices
+                'retired_devices' => $retiredDevices,
+                'logoWhirlpool' => $logoWhirlpool,
+'logoGtim' => $logoGtim
             ];
 
             $pdf = Pdf::loadView('carta_asignacion', $pdfData)
@@ -132,6 +137,10 @@ public function mostrarCarta(Request $request, $user_id)
         if (!$employee) {
             throw new \Exception('Empleado no encontrado.');
         }
+        // Leer imágenes en base64
+$logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirllogoo2.jpg')));
+$logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
+
 
         return view('letter', [
             'nombreUsuario'    => $employee->display_name,
@@ -270,7 +279,9 @@ public function firmarCarta(Request $request)
             'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
             'tipo_asignacion'  => $tipoAsignacion,
             'assigned_devices' => $assignedDevices,
-            'retired_devices'  => $retiredDevices
+            'retired_devices'  => $retiredDevices,
+            'logoWhirlpool' => $logoWhirlpool,
+'logoGtim' => $logoGtim
         ];
 
         $pdf = \Pdf::loadView('carta_asignacion', $pdfData)
