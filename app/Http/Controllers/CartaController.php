@@ -22,37 +22,42 @@ class CartaController extends Controller
         $this->brevo = $brevo;
     }
 
-    public function enviarCartaParaAprobacion(Request $request)
-    {
-        try {
-$userId = $request->input('user_id');
-$tipoAsignacion = $request->input('tipo_asignacion');
-$assignedDevices = $request->input('assigned_devices', []);
-$retiredDevices = $request->input('retired_devices', []);
+public function enviarCartaParaAprobacion(Request $request)
+{
+    try {
+        $userId = $request->input('user_id');
+        $tipoAsignacion = $request->input('tipo_asignacion');
+        $assignedDevices = $request->input('assigned_devices', []);
+        $retiredDevices = $request->input('retired_devices', []);
 
-
-            if (empty($assignedDevices)) {
-                return response()->json(['error' => 'No se recibieron dispositivos.'], 422);
-            }
-
-$devicesEncoded = base64_encode(json_encode($assignedDevices));
-$retiredEncoded = base64_encode(json_encode($retiredDevices));
-$url = url("/asset/autorizar/{$userId}?devices={$devicesEncoded}&retirados={$retiredEncoded}&tipo_asignacion={$tipoAsignacion}");
-
-
-            $this->brevo->enviarCorreoConLink(
-                'pololohdz2000@gmail.com',
-                'Responsable de Revisión',
-                $url,
-                $tipoAsignacion
-            );
-
-            return response()->json(['success' => '✅ Carta enviada al Asset para aprobación']);
-        } catch (\Exception $e) {
-            Log::error('❌ Error en enviarCartaParaAprobacion:', ['error' => $e->getMessage()]);
-            return response()->json(['error' => $e->getMessage()], 500);
+        if (empty($assignedDevices)) {
+            return response()->json(['error' => 'No se recibieron dispositivos.'], 422);
         }
+
+        // 🟢 Generar el folio aquí
+        $folio = $this->generarFolio();
+
+        // Codificar dispositivos
+        $devicesEncoded = base64_encode(json_encode($assignedDevices));
+        $retiredEncoded = base64_encode(json_encode($retiredDevices));
+
+        // 🟢 Incluir el folio en la URL
+        $url = url("/asset/autorizar/{$userId}?folio={$folio}&devices={$devicesEncoded}&retirados={$retiredEncoded}&tipo_asignacion={$tipoAsignacion}");
+
+        // Enviar correo
+        $this->brevo->enviarCorreoConLink(
+            'pololohdz2000@gmail.com',
+            'Responsable de Revisión',
+            $url,
+            $tipoAsignacion
+        );
+
+        return response()->json(['success' => '✅ Carta enviada al Asset para aprobación']);
+    } catch (\Exception $e) {
+        Log::error('❌ Error en enviarCartaParaAprobacion:', ['error' => $e->getMessage()]);
+        return response()->json(['error' => $e->getMessage()], 500);
     }
+}
 
     public function generarPDF(Request $request)
     {
@@ -110,8 +115,7 @@ public function mostrarCarta(Request $request, $user_id)
 {
     try {
         $tipoAsignacion = $request->input('tipo_asignacion', 'Asignación Regular');
-        $folio = $request->query('folio', 'SIN-FOLIO');
-
+        $folio = $request->query('folio', 'SIN-FOLIO'); // 🟢 Aquí tomas el folio desde la URL y NO lo vuelves a generar
 
         // DECODIFICAR dispositivos asignados
         $encodedDevices = $request->query('devices') ?? $request->query('dispositivos');
@@ -124,7 +128,7 @@ public function mostrarCarta(Request $request, $user_id)
             }
         }
 
-        // DECODIFICAR dispositivos retirados (nuevo)
+        // DECODIFICAR dispositivos retirados
         $retiredDevices = [];
         $encodedRetirados = $request->query('retirados');
         if ($encodedRetirados) {
@@ -139,8 +143,6 @@ public function mostrarCarta(Request $request, $user_id)
         if (!$employee) {
             throw new \Exception('Empleado no encontrado.');
         }
-$ultimo = \DB::table('folios')->first()->ultimo_numero ?? 0;
-$folio = 'WH' . str_pad($ultimo, 7, '0', STR_PAD_LEFT);
 
         // Leer imágenes en base64
         $logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirlpoollogo2.jpg')));
@@ -158,16 +160,16 @@ $folio = 'WH' . str_pad($ultimo, 7, '0', STR_PAD_LEFT);
             'tipo_asignacion'  => $tipoAsignacion,
             'assigned_devices' => $assignedDevices,
             'retired_devices'  => $retiredDevices,
-            'logoWhirlpool'    => $logoWhirlpool,   // 🔵 Añadido
-            'logoGtim'         => $logoGtim,         // 🔵 Añadido
-            'folio' => $folio
-
+            'logoWhirlpool'    => $logoWhirlpool,
+            'logoGtim'         => $logoGtim,
+            'folio'            => $folio // ✅ Solo se usa el que viene en la URL
         ]);
     } catch (\Exception $e) {
         Log::error('❌ Error al mostrar la carta:', ['error' => $e->getMessage()]);
         return response()->json(['error' => $e->getMessage()], 500);
     }
 }
+
 
 public function vistaParaAsset($user_id, Request $request)
 {
@@ -176,9 +178,11 @@ public function vistaParaAsset($user_id, Request $request)
         Log::info('🔍 vistaParaAsset - user_id recibido:', [$user_id]);
 
         $tipoAsignacion = $request->input('tipo_asignacion', 'Asignación Regular');
+        $folio = $request->query('folio', 'WH0000000'); // 🟢 Leer el folio de la URL
+
+        // Dispositivos asignados
         $encodedDevices = $request->query('devices') ?? $request->query('dispositivos');
         $assignedDevices = [];
-
         if ($encodedDevices) {
             $json = base64_decode($encodedDevices);
             $decoded = json_decode($json, true);
@@ -186,8 +190,10 @@ public function vistaParaAsset($user_id, Request $request)
                 $assignedDevices = $decoded;
             }
         }
-        $encodedRetirados = $request->query('retirados');
 
+        // Dispositivos retirados
+        $retiredDevices = [];
+        $encodedRetirados = $request->query('retirados');
         if ($encodedRetirados) {
             $json = base64_decode($encodedRetirados);
             $decoded = json_decode($json, true);
@@ -196,34 +202,33 @@ public function vistaParaAsset($user_id, Request $request)
             }
         }
 
+        // Buscar empleado
         $employee = EndUser::where('user_id', $user_id)->first();
         if (!$employee) {
             throw new \Exception('Empleado no encontrado.');
         }
-// Leer último número y construir folio
-$ultimo = \DB::table('folios')->first()->ultimo_numero ?? 0;
-$folio = 'WH' . str_pad($ultimo, 7, '0', STR_PAD_LEFT);
 
-        // Leer imágenes en base64
+        // Logos
         $logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirlpoollogo2.jpg')));
         $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
 
-return view('asset', [
-    'nombreUsuario'    => $employee->display_name,
-    'userId'           => $employee->user_id,
-    'email'            => $employee->email,
-    'position'         => $employee->position,
-    'location'         => $employee->location,
-    'costCenter'       => $employee->cost_center_name,
-    'supervisor'       => $employee->supervisor,
-    'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
-    'tipo_asignacion'  => $tipoAsignacion,
-    'assigned_devices' => $assignedDevices,
-    'retired_devices'  => $retiredDevices,
-    'logoWhirlpool'    => $logoWhirlpool,
-    'logoGtim'         => $logoGtim,
-    'folio'            => $folio // 🔵 AÑADIDO
-]);
+        // Renderizar vista
+        return view('asset', [
+            'nombreUsuario'    => $employee->display_name,
+            'userId'           => $employee->user_id,
+            'email'            => $employee->email,
+            'position'         => $employee->position,
+            'location'         => $employee->location,
+            'costCenter'       => $employee->cost_center_name,
+            'supervisor'       => $employee->supervisor,
+            'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
+            'tipo_asignacion'  => $tipoAsignacion,
+            'assigned_devices' => $assignedDevices,
+            'retired_devices'  => $retiredDevices,
+            'logoWhirlpool'    => $logoWhirlpool,
+            'logoGtim'         => $logoGtim,
+            'folio'            => $folio
+        ]);
 
     } catch (\Exception $e) {
         Log::error('❌ Error en vistaParaAsset:', ['error' => $e->getMessage()]);
@@ -231,51 +236,52 @@ return view('asset', [
     }
 }
 
-    public function aprobarDesdeAsset(Request $request)
-    {
-        try {
-            $userId = $request->input('user_id');
-            $tipoAsignacion = $request->input('tipo_asignacion');
-$assignedDevices = $request->input('assigned_devices', []);
-$retiredDevices = $request->input('retired_devices', []);
+public function aprobarDesdeAsset(Request $request)
+{
+    try {
+        $userId = $request->input('user_id');
+        $tipoAsignacion = $request->input('tipo_asignacion');
+        $folio = $request->input('folio'); // 🟢 Recibe el folio que ya estaba generado
 
-            if (empty($assignedDevices)) {
-                return response()->json(['error' => 'No se recibieron dispositivos.'], 422);
-            }
+        $assignedDevices = $request->input('assigned_devices', []);
+        $retiredDevices = $request->input('retired_devices', []);
 
-            Log::info('🛡️ Asset aprobó carta, se genera PDF y se notificará al usuario', compact('userId', 'tipoAsignacion', 'assignedDevices'));
-
-            $employee = EndUser::where('user_id', trim($userId))->first();
-            if (!$employee) {
-                throw new \Exception('Empleado no encontrado.');
-            }
-            $folioGenerado = $this->generarFolio();
-
-
-          $devicesEncoded = base64_encode(json_encode($assignedDevices));
-$retiredEncoded = base64_encode(json_encode($retiredDevices));
-
-$linkFirma = url("/letter/{$userId}?devices={$devicesEncoded}&retirados={$retiredEncoded}&tipo_asignacion={$tipoAsignacion}&folio={$folioGenerado}");
-
-            $this->brevo->enviarCorreoParaEmpleado(
-                $employee->email,
-                $employee->display_name,
-                $linkFirma,
-                $tipoAsignacion
-            );
-
-            return response()->json(['message' => 'Carta aprobada por el Asset. Enlace enviado al usuario. ✅']);
-        } catch (\Exception $e) {
-            Log::error('❌ Error al aprobar desde Asset:', ['error' => $e->getMessage()]);
-            return response()->json(['error' => $e->getMessage()], 500);
+        if (empty($assignedDevices)) {
+            return response()->json(['error' => 'No se recibieron dispositivos.'], 422);
         }
+
+        Log::info('🛡️ Asset aprobó carta. Se notifica al usuario.', compact('userId', 'tipoAsignacion', 'assignedDevices', 'folio'));
+
+        $employee = EndUser::where('user_id', trim($userId))->first();
+        if (!$employee) {
+            throw new \Exception('Empleado no encontrado.');
+        }
+
+        $devicesEncoded = base64_encode(json_encode($assignedDevices));
+        $retiredEncoded = base64_encode(json_encode($retiredDevices));
+
+        $linkFirma = url("/letter/{$userId}?devices={$devicesEncoded}&retirados={$retiredEncoded}&tipo_asignacion={$tipoAsignacion}&folio={$folio}");
+
+        $this->brevo->enviarCorreoParaEmpleado(
+            $employee->email,
+            $employee->display_name,
+            $linkFirma,
+            $tipoAsignacion
+        );
+
+        return response()->json(['message' => 'Carta aprobada por el Asset. Enlace enviado al usuario. ✅']);
+    } catch (\Exception $e) {
+        Log::error('❌ Error al aprobar desde Asset:', ['error' => $e->getMessage()]);
+        return response()->json(['error' => $e->getMessage()], 500);
     }
+}
 
 public function firmarCarta(Request $request)
 {
     try {
         $userId = $request->input('user_id');
         $tipoAsignacion = $request->input('tipo_asignacion');
+        $folio = $request->input('folio', 'SIN-FOLIO'); // 🟢 Recibe el folio enviado en el link
         $assignedDevices = $request->input('assigned_devices', []);
         $retiredDevices = $request->input('retired_devices', []);
 
@@ -287,11 +293,10 @@ public function firmarCarta(Request $request)
         if (!$employee) {
             return response()->json(['error' => 'Empleado no encontrado.'], 404);
         }
-        $folio = $this->generarFolio();
 
-// Leer imágenes en base64
-$logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirlpoollogo2.jpg')));
-$logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
+        // Logos
+        $logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirlpoollogo2.jpg')));
+        $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
 
         $pdfData = [
             'nombreUsuario'    => $employee->display_name,
@@ -305,25 +310,23 @@ $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
             'tipo_asignacion'  => $tipoAsignacion,
             'assigned_devices' => $assignedDevices,
             'retired_devices'  => $retiredDevices,
-            'logoWhirlpool' => $logoWhirlpool,
-'logoGtim' => $logoGtim,
-'folio' => $folio
-
+            'logoWhirlpool'    => $logoWhirlpool,
+            'logoGtim'         => $logoGtim,
+            'folio'            => $folio // 🟢 El mismo folio
         ];
 
         $pdf = \Pdf::loadView('carta_asignacion', $pdfData)
-           ->setPaper('letter', 'portrait');
+            ->setPaper('letter', 'portrait');
         $fileName = "Carta_Firmada_{$userId}.pdf";
         $filePath = storage_path("app/public/{$fileName}");
         $pdf->save($filePath);
 
-        // Nuevo cuerpo del correo
+        // Correo
         $body = "
             <p>Hola {$employee->display_name},</p>
             <p>Tu carta de asignación ha sido firmada exitosamente. Se adjunta el documento PDF.</p>
         ";
 
-        // Usar BrevoMailer para enviar el correo con API
         $this->brevo->enviarCorreoConAdjunto(
             $employee->email,
             $employee->display_name,
@@ -338,6 +341,7 @@ $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
         return response()->json(['error' => $e->getMessage()], 500);
     }
 }
+
 private function generarFolio()
 {
     $folio = \DB::table('folios')->lockForUpdate()->first();
