@@ -74,7 +74,7 @@ $url = url("/asset/autorizar/{$userId}?devices={$devicesEncoded}&retirados={$ret
                 throw new \Exception('❌ Empleado no encontrado.');
             }
             // Leer imágenes en base64
-$logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirllogoo2.jpg')));
+$logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirlpoollogo2.jpg')));
 $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
 
             $pdfData = [
@@ -138,7 +138,7 @@ public function mostrarCarta(Request $request, $user_id)
             throw new \Exception('Empleado no encontrado.');
         }
         // Leer imágenes en base64
-$logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirllogoo2.jpg')));
+$logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirlpoollogo2.jpg')));
 $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
 
 
