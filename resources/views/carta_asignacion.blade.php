@@ -12,11 +12,12 @@
 body {
     font-family: Arial, sans-serif;
     font-size: 14px;
-    margin: 10px; /* margen reducido */
-    padding: 0;   /* sin padding extra */
+    margin: 10px;
+    padding: 0;
     line-height: 1.6;
-    background-color: #f9f9f9;
+    background-color: white;
 }
+
 
 
         .header {
@@ -98,8 +99,8 @@ body {
             text-align: center;
             color: #555;
         }
-        .contenido-carta {
-    width: 95%;
+.contenido-carta {
+    width: 98%;
     margin: 0 auto;
     padding: 20px;
     background-color: white;
@@ -110,6 +111,11 @@ body {
     </style>
 </head>
 <body>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+    <img src="{{ public_path('whirlpoollogo2.jpg') }}" style="height:40px;">
+    <img src="{{ public_path('gtimlogo.jpg') }}" style="height:40px;">
+</div>
+
     <div class="contenido-carta">
 
 
@@ -136,6 +142,8 @@ body {
         <tr><th>Centro de Costo</th><td>{{ $costCenter }}</td></tr>
         <tr><th>Supervisor</th><td>{{ $supervisor }}</td></tr>
         <tr><th>Fecha Aceptación</th><td>{{ $fechaAceptacion }}</td></tr>
+        <tr><th>Folio</th><td>{{ $folio ?? 'WH0000000' }}</td></tr>
+
     </table>
 
     <h3 style="color:#003366;">Lista de Dispositivos Asignados</h3>
@@ -220,10 +228,6 @@ body {
             <td>{{ $nombreUsuario }}: {{ $email }}</td>
             <td>Estoy de acuerdo</td>
             <td>{{ $fechaAceptacion }}</td>
-        </tr>
-        <tr>
-            <td colspan="2">Nombre y firma de quien firma de aceptación:</td>
-            <td>Fecha de aceptación:</td>
         </tr>
     </table>
 
