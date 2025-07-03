@@ -287,6 +287,8 @@ public function firmarCarta(Request $request)
         if (!$employee) {
             return response()->json(['error' => 'Empleado no encontrado.'], 404);
         }
+        $folio = $this->generarFolio();
+
 // Leer imágenes en base64
 $logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirlpoollogo2.jpg')));
 $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
@@ -304,7 +306,9 @@ $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
             'assigned_devices' => $assignedDevices,
             'retired_devices'  => $retiredDevices,
             'logoWhirlpool' => $logoWhirlpool,
-'logoGtim' => $logoGtim
+'logoGtim' => $logoGtim,
+'folio' => $folio
+
         ];
 
         $pdf = \Pdf::loadView('carta_asignacion', $pdfData)

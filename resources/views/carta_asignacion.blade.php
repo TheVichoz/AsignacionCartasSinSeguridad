@@ -152,7 +152,8 @@ body {
         <tr><th>Centro de Costo</th><td>{{ $costCenter }}</td></tr>
         <tr><th>Supervisor</th><td>{{ $supervisor }}</td></tr>
         <tr><th>Fecha Aceptación</th><td>{{ $fechaAceptacion }}</td></tr>
-        <tr><th>Folio</th><td>{{ $folio ?? 'WH0000000' }}</td></tr>
+        <tr><th>Folio</th><td>{{ $folio }}</td></tr>
+
 
     </table>
 
