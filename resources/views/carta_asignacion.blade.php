@@ -9,15 +9,15 @@
          * - Clean and professional appearance
          * - Highlight section, tables, and signature format
         */
-        body {
-            font-family: Arial, sans-serif;
-            font-size: 14px;
-            margin: 40px;
-            border: 1px solid #ddd;
-            padding: 20px;
-            line-height: 1.6;
-            background-color: #f9f9f9;
-        }
+body {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+    margin: 10px; /* margen reducido */
+    padding: 0;   /* sin padding extra */
+    line-height: 1.6;
+    background-color: #f9f9f9;
+}
+
 
         .header {
             display: flex;
@@ -98,9 +98,20 @@
             text-align: center;
             color: #555;
         }
+        .contenido-carta {
+    width: 95%;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: white;
+    border: 1px solid #ddd;
+    box-sizing: border-box;
+}
+
     </style>
 </head>
 <body>
+    <div class="contenido-carta">
+
 
     <!-- Header section: displays current timestamp for document traceability -->
     <div class="header">
@@ -216,9 +227,6 @@
         </tr>
     </table>
 
-    <div class="footer">
-        Documento generado automáticamente. Para más información, contactar al área de TI.
     </div>
-
 </body>
 </html>

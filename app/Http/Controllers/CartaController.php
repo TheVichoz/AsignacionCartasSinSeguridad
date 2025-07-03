@@ -88,7 +88,8 @@ $url = url("/asset/autorizar/{$userId}?devices={$devicesEncoded}&retirados={$ret
                 'retired_devices' => $retiredDevices
             ];
 
-            $pdf = Pdf::loadView('carta_asignacion', $pdfData);
+            $pdf = Pdf::loadView('carta_asignacion', $pdfData)
+          ->setPaper('letter', 'portrait');
             $fileName = "Carta_Asignacion_{$userId}.pdf";
             $filePath = storage_path("app/public/{$fileName}");
             $pdf->save($filePath);
@@ -272,7 +273,8 @@ public function firmarCarta(Request $request)
             'retired_devices'  => $retiredDevices
         ];
 
-        $pdf = \Pdf::loadView('carta_asignacion', $pdfData);
+        $pdf = \Pdf::loadView('carta_asignacion', $pdfData)
+           ->setPaper('letter', 'portrait');
         $fileName = "Carta_Firmada_{$userId}.pdf";
         $filePath = storage_path("app/public/{$fileName}");
         $pdf->save($filePath);
