@@ -198,6 +198,8 @@
     <form id="aceptacionForm">
         @csrf
         <input type="hidden" name="user_id" value="{{ $userId }}">
+        <input type="hidden" name="folio" value="{{ $folio }}">
+
         <div class="form-check my-3">
             <input type="checkbox" class="form-check-input" id="acceptCheck" required>
             <label class="form-check-label" for="acceptCheck">Acepto los términos y condiciones</label>
@@ -214,34 +216,38 @@
     });
 
     // Enviar los datos al backend usando fetch (sin descarga)
-    document.getElementById("aceptacionForm").addEventListener("submit", function (event) {
-        event.preventDefault();
-        fetch("{{ route('letter.confirmar') }}", {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Content-Type': 'application/json'
-            },
-body: JSON.stringify({
-    user_id: "{{ $userId }}",
-    assigned_devices: @json($assigned_devices),
-    retired_devices: @json($retired_devices),
-    tipo_asignacion: "{{ $tipo_asignacion ?? 'Asignación Regular' }}",
-    folio: "{{ $folio }}"
-})
+    // Enviar los datos al backend usando fetch (sin descarga)
+document.getElementById("aceptacionForm").addEventListener("submit", function (event) {
+    event.preventDefault();
 
+    const folioValue = document.querySelector('input[name="folio"]').value;
+
+    fetch("{{ route('letter.confirmar') }}", {
+        method: 'POST',
+        headers: {
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+            user_id: "{{ $userId }}",
+            assigned_devices: @json($assigned_devices),
+            retired_devices: @json($retired_devices),
+            tipo_asignacion: "{{ $tipo_asignacion ?? 'Asignación Regular' }}",
+            folio: folioValue
         })
-        .then(response => {
-            if (response.ok) {
-                alert("✅ Aceptación enviada correctamente. Recibirás el PDF por correo.");
-            } else {
-                alert("❌ Hubo un problema al enviar la aceptación.");
-            }
-        })
-        .catch(err => {
-            alert("❌ Error: " + err.message);
-        });
+    })
+    .then(response => {
+        if (response.ok) {
+            alert("✅ Aceptación enviada correctamente. Recibirás el PDF por correo.");
+        } else {
+            alert("❌ Hubo un problema al enviar la aceptación.");
+        }
+    })
+    .catch(err => {
+        alert("❌ Error: " + err.message);
     });
+});
+
 </script>
 
 </body>
