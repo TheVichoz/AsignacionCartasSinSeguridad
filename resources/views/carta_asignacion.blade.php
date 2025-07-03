@@ -130,10 +130,10 @@ body {
 
 
     <!-- Header section: displays current timestamp for document traceability -->
-    <div class="header">
-        <div>&nbsp;</div>
-        <div>{{ \Carbon\Carbon::now()->format('D M d Y H:i:s T') }}</div>
-    </div>
+<div style="text-align:right; font-weight:bold; font-size:12px; color:#333; margin-bottom:5px;">
+    {{ \Carbon\Carbon::now()->format('D M d Y H:i:s T') }}
+</div>
+
 
     <h2>Carta de Asignación de Equipo</h2>
 
