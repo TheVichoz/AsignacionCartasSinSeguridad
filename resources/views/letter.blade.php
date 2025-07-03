@@ -222,12 +222,14 @@
                 'X-CSRF-TOKEN': '{{ csrf_token() }}',
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                user_id: "{{ $userId }}",
-                assigned_devices: @json($assigned_devices),
-                    retired_devices: @json($retired_devices),
-                tipo_asignacion: "{{ $tipo_asignacion ?? 'Asignación Regular' }}"
-            })
+body: JSON.stringify({
+    user_id: "{{ $userId }}",
+    assigned_devices: @json($assigned_devices),
+    retired_devices: @json($retired_devices),
+    tipo_asignacion: "{{ $tipo_asignacion ?? 'Asignación Regular' }}",
+    folio: "{{ $folio }}"
+})
+
         })
         .then(response => {
             if (response.ok) {
