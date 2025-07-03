@@ -182,7 +182,7 @@
 </main>
 
 <footer class="footer">
-  &copy; 2025 Mi Aplicación. Todos los derechos reservados.
+Copyright 2025 © www.grupotimexico.com
 </footer>
 <script>
 document.getElementById('userId').addEventListener('blur', function() {
