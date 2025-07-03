@@ -139,6 +139,8 @@ public function mostrarCarta(Request $request, $user_id)
         if (!$employee) {
             throw new \Exception('Empleado no encontrado.');
         }
+$ultimo = \DB::table('folios')->first()->ultimo_numero ?? 0;
+$folio = 'WH' . str_pad($ultimo, 7, '0', STR_PAD_LEFT);
 
         // Leer imágenes en base64
         $logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirlpoollogo2.jpg')));
@@ -198,26 +200,31 @@ public function vistaParaAsset($user_id, Request $request)
         if (!$employee) {
             throw new \Exception('Empleado no encontrado.');
         }
+// Leer último número y construir folio
+$ultimo = \DB::table('folios')->first()->ultimo_numero ?? 0;
+$folio = 'WH' . str_pad($ultimo, 7, '0', STR_PAD_LEFT);
 
         // Leer imágenes en base64
         $logoWhirlpool = base64_encode(file_get_contents(public_path('img/whirlpoollogo2.jpg')));
         $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
 
-        return view('asset', [
-            'nombreUsuario'    => $employee->display_name,
-            'userId'           => $employee->user_id,
-            'email'            => $employee->email,
-            'position'         => $employee->position,
-            'location'         => $employee->location,
-            'costCenter'       => $employee->cost_center_name,
-            'supervisor'       => $employee->supervisor,
-            'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
-            'tipo_asignacion'  => $tipoAsignacion,
-            'assigned_devices' => $assignedDevices,
-            'retired_devices'  => $retiredDevices,
-            'logoWhirlpool'    => $logoWhirlpool,
-            'logoGtim'         => $logoGtim
-        ]);
+return view('asset', [
+    'nombreUsuario'    => $employee->display_name,
+    'userId'           => $employee->user_id,
+    'email'            => $employee->email,
+    'position'         => $employee->position,
+    'location'         => $employee->location,
+    'costCenter'       => $employee->cost_center_name,
+    'supervisor'       => $employee->supervisor,
+    'fechaAceptacion'  => now()->format('d/m/Y H:i:s'),
+    'tipo_asignacion'  => $tipoAsignacion,
+    'assigned_devices' => $assignedDevices,
+    'retired_devices'  => $retiredDevices,
+    'logoWhirlpool'    => $logoWhirlpool,
+    'logoGtim'         => $logoGtim,
+    'folio'            => $folio // 🔵 AÑADIDO
+]);
+
     } catch (\Exception $e) {
         Log::error('❌ Error en vistaParaAsset:', ['error' => $e->getMessage()]);
         return response()->json(['error' => $e->getMessage()], 500);
