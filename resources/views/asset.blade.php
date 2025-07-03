@@ -88,6 +88,8 @@
         <tr><th>Ubicación</th><td>{{ $location }}</td></tr>
         <tr><th>Centro de Costo</th><td>{{ $costCenter }}</td></tr>
         <tr><th>Supervisor</th><td>{{ $supervisor }}</td></tr>
+        <tr><th>FOLIO</th><td>{{ $folio }}</td></tr>
+
     </table>
 
     <h5 class="fw-bold">Lista de Dispositivos Asignados</h5>

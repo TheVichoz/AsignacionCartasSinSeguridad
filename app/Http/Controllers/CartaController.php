@@ -110,6 +110,8 @@ public function mostrarCarta(Request $request, $user_id)
 {
     try {
         $tipoAsignacion = $request->input('tipo_asignacion', 'Asignación Regular');
+        $folio = $request->query('folio', 'SIN-FOLIO');
+
 
         // DECODIFICAR dispositivos asignados
         $encodedDevices = $request->query('devices') ?? $request->query('dispositivos');
@@ -155,7 +157,9 @@ public function mostrarCarta(Request $request, $user_id)
             'assigned_devices' => $assignedDevices,
             'retired_devices'  => $retiredDevices,
             'logoWhirlpool'    => $logoWhirlpool,   // 🔵 Añadido
-            'logoGtim'         => $logoGtim         // 🔵 Añadido
+            'logoGtim'         => $logoGtim,         // 🔵 Añadido
+            'folio' => $folio
+
         ]);
     } catch (\Exception $e) {
         Log::error('❌ Error al mostrar la carta:', ['error' => $e->getMessage()]);
@@ -238,11 +242,13 @@ $retiredDevices = $request->input('retired_devices', []);
             if (!$employee) {
                 throw new \Exception('Empleado no encontrado.');
             }
+            $folioGenerado = $this->generarFolio();
+
 
           $devicesEncoded = base64_encode(json_encode($assignedDevices));
 $retiredEncoded = base64_encode(json_encode($retiredDevices));
 
-$linkFirma = url("/letter/{$userId}?devices={$devicesEncoded}&retirados={$retiredEncoded}&tipo_asignacion={$tipoAsignacion}");
+$linkFirma = url("/letter/{$userId}?devices={$devicesEncoded}&retirados={$retiredEncoded}&tipo_asignacion={$tipoAsignacion}&folio={$folioGenerado}");
 
             $this->brevo->enviarCorreoParaEmpleado(
                 $employee->email,
@@ -320,6 +326,16 @@ $logoGtim = base64_encode(file_get_contents(public_path('img/gtimlogo.jpg')));
         \Log::error('❌ Error en firmarCarta:', ['error' => $e->getMessage()]);
         return response()->json(['error' => $e->getMessage()], 500);
     }
+}
+private function generarFolio()
+{
+    $folio = \DB::table('folios')->lockForUpdate()->first();
+
+    $nuevoNumero = $folio->ultimo_numero + 1;
+
+    \DB::table('folios')->update(['ultimo_numero' => $nuevoNumero]);
+
+    return 'WH' . str_pad($nuevoNumero, 7, '0', STR_PAD_LEFT);
 }
 
 }
